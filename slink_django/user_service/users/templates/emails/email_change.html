@@ -1,0 +1,45 @@
+{% load i18n %}
+
+{% block subject %}
+{% blocktrans %}Изменение адреса электронной почты на {{ site_name }}{% endblocktrans %}
+{% endblock subject %}
+
+{% block text_body %}
+{% blocktrans %}Здравствуй, {{ user.first_name }} {{ user.last_name }}!{% endblocktrans %}
+
+{% blocktrans %}Вы получили это письмо, потому что запросили изменение адреса электронной почты на сайте {{ site_name }}.{% endblocktrans %}
+
+{% trans "Пожалуйста, перейдите по следующей ссылке для подтверждения изменения адреса электронной почты:" %}
+{{ protocol }}://{{ domain }}/{{ url|safe }}
+
+{% trans "Если вы не делали этот запрос, просто проигнорируйте это письмо." %}
+
+{% blocktrans %}Спасибо, что используете наш сайт!{% endblocktrans %}
+
+{% blocktrans %}Команда {{ site_name }}{% endblocktrans %}
+{% endblock text_body %}
+
+{% block html_body %}
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% blocktrans %}Вы получили это письмо, потому что запросили изменение адреса электронной почты на сайте {{ site_name }}.{% endblocktrans %}
+</p>
+
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% trans "Пожалуйста, перейдите по следующей ссылке для подтверждения изменения адреса электронной почты:" %}
+</p>
+<p>
+    <a href="{{ protocol }}://{{ domain }}/{{ url|safe }}" style="font-family: Arial, sans-serif; font-size: 14px; color: #1a73e8;">{{ url|safe }}</a>
+</p>
+
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% trans "Если вы не делали этот запрос, просто проигнорируйте это письмо." %}
+</p>
+
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% blocktrans %}Спасибо, что используете наш сайт!{% endblocktrans %}
+</p>
+
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% blocktrans %}Команда {{ site_name }}{% endblocktrans %}
+</p>
+{% endblock html_body %}

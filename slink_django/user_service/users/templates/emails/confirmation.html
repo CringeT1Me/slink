@@ -1,0 +1,27 @@
+{% load i18n %}
+
+{% block subject %}
+{% blocktrans %}{{ site_name }} - Ваш аккаунт успешно создан и активирован!{% endblocktrans %}
+{% endblock %}
+
+{% block text_body %}
+{% trans "Ваш аккаунт создан и готов к использованию!" %}
+
+{% trans "Спасибо, что пользуйтесь нашим сайтом!" %}
+
+{% blocktrans %}Команда {{ site_name }}{% endblocktrans %}
+{% endblock text_body %}
+
+{% block html_body %}
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% trans "Ваш аккаунт создан и готов к использованию!" %}
+</p>
+
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% trans "Спасибо, что пользуйтесь нашим сайтом!" %}
+</p>
+
+<p style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+    {% blocktrans %}Команда {{ site_name }}{% endblocktrans %}
+</p>
+{% endblock html_body %}

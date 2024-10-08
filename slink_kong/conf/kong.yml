@@ -1,0 +1,64 @@
+_format_version: "1.1"
+services:
+  - name: user-service
+    url: http://user-service:8000
+
+    routes:
+      - name: users-v1
+        paths:
+          - /api/v1/users/
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        preserve_host: true
+        strip_path: false
+
+      - name: cities-v1
+        paths:
+          - /api/v1/countries/
+          - /api/v1/cities/
+        methods: ["GET", "OPTIONS"]
+        preserve_host: true
+        strip_path: false
+
+      - name: jwt-v1
+        paths:
+          - /api/v1/users/jwt/
+        methods: ["POST", "OPTIONS"]
+        preserve_host: true
+        strip_path: false
+
+      - name: friendship-v1
+        paths:
+          - /api/v1/users/send_friend_request/
+          - /api/v1/users/cancel_friend_request/
+        methods: ["POST", "OPTIONS"]
+        preserve_host: true
+        strip_path: false
+
+      - name: check-username-v1
+        paths:
+          - /api/v1/check-username/
+        methods: ["GET", "OPTIONS"]
+        preserve_host: true
+        strip_path: false
+plugins:
+  - name: cors
+    service: user-service
+    config:
+      origins:
+        - 'https://localhost:8080'
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Content-Type
+        - Authorization
+      exposed_headers:
+        - Authorization
+      credentials: true
+      max_age: 3600
+      preflight_continue: false

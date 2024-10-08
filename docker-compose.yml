@@ -1,0 +1,373 @@
+services:
+
+  postgres_users:
+    image: postgres:15.8-alpine
+    hostname: ${POSTGRES_USERS_HOST}
+    environment:
+      TZ: ${TIME_ZONE}
+      PGTZ: ${TIME_ZONE}
+      POSTGRES_DB: ${POSTGRES_USERS_NAME}
+      POSTGRES_USER: ${POSTGRES_USERS_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_USERS_PASSWORD}
+    ports:
+      - "${POSTGRES_USERS_PORT}:5432"
+    volumes:
+      - postgres_data_users:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USERS_USER} -d ${POSTGRES_USERS_NAME}'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery_users:
+    build:
+      context: ./slink_django/user_service
+      dockerfile: Dockerfile
+    command: ["celery", "-A", "user_service", "worker", "--loglevel=info", "--hostname=celery_users@%h"]
+    volumes:
+      - user_service_volume:/slink_django/user_service/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis_users:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "user_service", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+    env_file:
+      - .env
+    restart: on-failure:30
+
+  celery_friendship:
+    build:
+      context: ./slink_django/friendship_service
+      dockerfile: Dockerfile
+    command: [ "celery", "-A", "friendship_service", "worker", "--loglevel=info", "--hostname=celery_friendship@%h" ]
+    volumes:
+      - friendship_service_volume:/slink_django/friendship_service/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis_friendship:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "friendship_service", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+    env_file:
+      - .env
+    restart: on-failure:30
+
+  celery_files:
+    build:
+      context: ./slink_django/files_service
+      dockerfile: Dockerfile
+    command: [ "celery", "-A", "files_service", "worker", "--loglevel=info", "--hostname=celery_files@%h" ]
+    volumes:
+      - files_service_volume:/slink_django/files_service/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis_files:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "files_service", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+    env_file:
+      - .env
+    restart: on-failure:30
+
+  flower:
+    image: mher/flower:2.0.1
+    command: ["celery", "flower"]
+    environment:
+      - CELERY_BROKER_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672/${RABBITMQ_CELERY_VHOST}
+      - FLOWER_PORT=5555
+      - FLOWER_BASIC_AUTH=${FLOWER_USER}:${FLOWER_PASSWORD}  # Для защиты доступа
+    ports:
+      - "5555:5555"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      celery_users:
+        condition: service_healthy
+      celery_friendship:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: on-failure:30
+
+  postgres_friendship:
+    image: postgres:15.8-alpine
+    hostname: ${POSTGRES_FRIENDSHIP_HOST}
+    environment:
+      TZ: ${TIME_ZONE}
+      PGTZ: ${TIME_ZONE}
+      POSTGRES_DB: ${POSTGRES_FRIENDSHIP_NAME}
+      POSTGRES_USER: ${POSTGRES_FRIENDSHIP_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_FRIENDSHIP_PASSWORD}
+    ports:
+      - "${POSTGRES_FRIENDSHIP_PORT}:5432"
+    volumes:
+      - postgres_data_friendship:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_FRIENDSHIP_USER} -d ${POSTGRES_FRIENDSHIP_NAME}'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    build:
+      context: ./slink_django/rabbitmq
+      dockerfile: Dockerfile
+    hostname: ${RABBITMQ_HOST}
+    ports:
+      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+      - "${RABBITMQ_MANAGEMENT_PORT}:${RABBITMQ_MANAGEMENT_PORT}"
+    environment:
+      TZ: 'Europe/Moscow'
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_SERVICES_VHOST: ${RABBITMQ_SERVICES_VHOST}
+      RABBITMQ_CELERY_VHOST: ${RABBITMQ_CELERY_VHOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_MANAGEMENT_PORT: ${RABBITMQ_MANAGEMENT_PORT}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis_users:
+    image: redis:alpine3.20
+    hostname: ${REDIS_USERS_HOST}
+    command: redis-server --requirepass ${REDIS_USERS_PASSWORD}
+    ports:
+      - "${REDIS_USERS_PORT}:6379"
+    environment:
+      TZ: ${TIME_ZONE}
+    volumes:
+      - redis_data_users:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis_friendship:
+    image: redis:alpine3.20
+    hostname: ${REDIS_FRIENDSHIP_HOST}
+    command: redis-server --requirepass ${REDIS_FRIENDSHIP_PASSWORD}
+    ports:
+      - "${REDIS_FRIENDSHIP_PORT}:6379"
+    environment:
+      TZ: ${TIME_ZONE}
+    volumes:
+      - redis_data_friendship:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis_files:
+    image: redis:alpine3.20
+    hostname: ${REDIS_FILES_HOST}
+    command: redis-server --requirepass ${REDIS_FILES_PASSWORD}
+    ports:
+      - "${REDIS_FILES_PORT}:6379"
+    environment:
+      TZ: ${TIME_ZONE}
+    volumes:
+      - redis_data_files:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user_service_migrate:
+    hostname: user_service
+    build:
+      context: ./slink_django/user_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py makemigrations
+      && sleep 5
+      && python manage.py migrate
+      "
+    env_file:
+      - .env
+    volumes:
+      - user_service_volume:/slink_django/user_service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_users:
+        condition: service_healthy
+      redis_users:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  user_service:
+    hostname: user-service
+    build:
+      context: ./slink_django/user_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py runserver 0.0.0.0:8000
+      "
+    env_file:
+      - .env
+    volumes:
+      - user_service_volume:/slink_django/user_service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_users:
+        condition: service_healthy
+      redis_users:
+        condition: service_healthy
+      user_service_migrate:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
+  files_service:
+    hostname: files-service
+    build:
+      context: ./slink_django/files_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py runserver 0.0.0.0:8000
+      "
+    env_file:
+      - .env
+    volumes:
+      - files_service_volume:/slink_django/files_service
+    networks:
+      - app-network
+
+  friendship_service_migrate:
+    build:
+      context: ./slink_django/friendship_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py makemigrations
+      && sleep 5
+      && python manage.py migrate
+      "
+    env_file:
+      - .env
+    volumes:
+      - friendship_service_volume:/slink_django/friendship_service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_friendship:
+        condition: service_healthy
+      redis_friendship:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: on-failure:30
+
+  friendship_service:
+    build:
+      context: ./slink_django/friendship_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py start_rabbitmq_consumer
+      "
+    env_file:
+      - .env
+    volumes:
+      - friendship_service_volume:/slink_django/friendship_service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_friendship:
+        condition: service_healthy
+      redis_friendship:
+        condition: service_healthy
+      friendship_service_migrate:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+    restart: on-failure:30
+
+  kong:
+    image: kong/kong-gateway:2.8-alpine
+    environment:
+      KONG_DATABASE: off
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
+      KONG_ADMIN_GUI_URL: http://localhost:8002
+    ports:
+      - "8000:8000"
+      - "8433:8433"
+      - "8001:8001"
+      - "8002:8002"
+      - "8444:8444"
+    networks:
+      - app-network
+    volumes:
+      - ./slink_kong/conf/kong.yml:/usr/local/kong/declarative/kong.yml
+
+
+volumes:
+  rabbitmq_data:
+  postgres_data_users:
+  postgres_data_friendship:
+  redis_data_users:
+    driver: local
+  redis_data_friendship:
+    driver: local
+  redis_data_files:
+    driver: local
+  user_service_volume:
+    driver: local
+  friendship_service_volume:
+    driver: local
+  files_service_volume:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

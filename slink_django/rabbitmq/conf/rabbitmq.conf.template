@@ -1,0 +1,3 @@
+load_definitions = /etc/rabbitmq/definitions.json
+listeners.tcp.default = ${RABBITMQ_PORT}
+management.listener.port = ${RABBITMQ_MANAGEMENT_PORT}

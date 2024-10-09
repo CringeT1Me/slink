@@ -26,6 +26,8 @@ SECRET_KEY = os.environ.get('USERS_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG')
 
+HOST = 'user_service'
+
 TIME_ZONE = os.environ.get('TIME_ZONE')
 USE_TZ = True
 
@@ -219,9 +221,10 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": False,
 
     "ALGORITHM": "HS256",
+    "SIGNING_KEY": os.environ.get('JWT_SECRET'),
     "VERIFYING_KEY": "",
     "AUDIENCE": None,
-    "ISSUER": None,
+    "ISSUER": HOST,
     "JSON_ENCODER": None,
     "JWK_URL": None,
     "LEEWAY": 0,

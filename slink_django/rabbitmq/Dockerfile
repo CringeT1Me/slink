@@ -8,4 +8,3 @@ COPY conf/definitions.json.template /etc/rabbitmq/definitions.json.template
 COPY /init_rabbitmq.sh /init_rabbitmq.sh
 RUN chmod +x /init_rabbitmq.sh
 CMD ["/init_rabbitmq.sh"]
-

@@ -226,9 +226,7 @@ services:
       context: ./slink_django/user_service
       dockerfile: Dockerfile
     command: bash -c "
-      python manage.py makemigrations
-      && sleep 5
-      && python manage.py migrate
+      python manage.py migrate
       "
     env_file:
       - .env
@@ -332,13 +330,20 @@ services:
     restart: on-failure:30
 
   kong:
-    image: kong/kong-gateway:2.8-alpine
+    build:
+      context: ./slink_kong
+      dockerfile: Dockerfile
     environment:
       KONG_DATABASE: off
       KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_ERROR_LOG: /dev/stderr
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
       KONG_ADMIN_LISTEN: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
       KONG_ADMIN_GUI_URL: http://localhost:8002
+      JWT_SECRET: ${JWT_SECRET}
+      KONG_LOG_LEVEL: debug
     ports:
       - "8000:8000"
       - "8433:8433"
@@ -347,8 +352,6 @@ services:
       - "8444:8444"
     networks:
       - app-network
-    volumes:
-      - ./slink_kong/conf/kong.yml:/usr/local/kong/declarative/kong.yml
 
 
 volumes:

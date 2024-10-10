@@ -14,6 +14,8 @@ from rest_framework.exceptions import ValidationError
 from django.core import exceptions as django_exceptions
 from rest_framework.settings import api_settings
 import requests
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 
 User = get_user_model()
 
@@ -175,3 +177,13 @@ class SendFriendRequestSerializer(serializers.Serializer):
 
 class CancelFriendRequestSerializer(SendFriendRequestSerializer):
     pass
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        token['user_role'] = user.role
+
+        return token

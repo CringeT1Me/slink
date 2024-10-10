@@ -1,45 +1,22 @@
 _format_version: "1.1"
 services:
   - name: user-service
-    url: http://user-service:8000
 
+    url: http://user-service:8000
     routes:
-      - name: users-v1
+      - name: user-v1
         paths:
-          - /api/v1/users/
+          - /api/v1/users/set_username/
+          - /api/v1/users/set_password/
         methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
         preserve_host: true
         strip_path: false
-        plugins:
-          - name: jwt
-            config:
-              header_names:
-                - Authorization     # JWT токен передается через заголовок Authorization
-              secret_is_base64: false
-              key_claim_name: iss
-              claims_to_verify: # Плейсхолдеры для проверки токена
-                - exp
 
       - name: cities-v1
         paths:
           - /api/v1/countries/
           - /api/v1/cities/
         methods: ["GET", "OPTIONS"]
-        preserve_host: true
-        strip_path: false
-        plugins:
-          - name: jwt
-            config:
-              header_names:
-                - Authorization     # JWT токен передается через заголовок Authorization
-              secret_is_base64: false
-              claims_to_verify: # Плейсхолдеры для проверки токена
-                - exp
-
-      - name: jwt-v1
-        paths:
-          - /api/v1/users/jwt/
-        methods: ["POST", "OPTIONS"]
         preserve_host: true
         strip_path: false
 
@@ -51,14 +28,7 @@ services:
         methods: ["POST", "OPTIONS"]
         preserve_host: true
         strip_path: false
-        plugins:
-          - name: jwt
-            config:
-              header_names:
-                - Authorization     # JWT токен передается через заголовок Authorization
-              secret_is_base64: false
-              claims_to_verify: # Плейсхолдеры для проверки токена
-                - exp
+
 
       - name: check-username-v1
         paths:
@@ -66,17 +36,49 @@ services:
         methods: ["GET", "OPTIONS"]
         preserve_host: true
         strip_path: false
-        plugins:
-          - name: jwt
-            config:
-              header_names:
-                - Authorization     # JWT токен передается через заголовок Authorization
-              secret_is_base64: false
-              claims_to_verify: # Плейсхолдеры для проверки токена
-                - exp
+
+    plugins:
+      - name: jwt
+        config:
+          header_names:
+            - Authorization     # JWT токен передается через заголовок Authorization
+          secret_is_base64: false
+          claims_to_verify: # Плейсхолдеры для проверки токена
+            - exp
+
+  - name: user-service-non-jwt
+    url: http://user-service:8000
+    routes:
+      - name: users-v1
+        paths:
+          - /api/v1/users/
+          - /api/v1/users/activation/
+          - /api/v1/users/registration/
+          - /api/v1/users/resend_activation/
+          - /api/v1/users/reset_password/
+          - /api/v1/users/password_reset_confirm/
+        methods: [ "GET", "POST", "OPTIONS" ]
+        preserve_host: true
+        strip_path: false
+
+      - name: cities-v1
+        paths:
+          - /api/v1/countries/
+          - /api/v1/cities/
+        methods: [ "GET", "OPTIONS" ]
+        preserve_host: true
+        strip_path: false
+
+      - name: jwt-v1
+        paths:
+          - /api/v1/users/jwt/
+        methods: [ "POST", "OPTIONS" ]
+        preserve_host: true
+        strip_path: false
+
+
 plugins:
   - name: cors
-    service: user-service
     config:
       origins:
         - 'https://localhost:8080'

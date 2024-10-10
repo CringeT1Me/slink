@@ -19,6 +19,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         (MALE, 'Мужчина'),
         (FEMALE, 'Женщина')
     }
+
+    ADMIN = 2
+    MODERATOR = 1
+    USER = 0
+    ROLE_CHOICES = {
+        (USER, 'Пользователь'),
+        (MODERATOR, 'Модератор'),
+        (ADMIN, 'Админ')
+    }
+
     username = models.CharField(_('username'), validators=[MinLengthValidator(6)],
                                 max_length=30, unique=True)
     email = models.EmailField(_('email address'), unique=True)
@@ -37,6 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(_('date joined'), auto_now_add=True)
     date_of_birthday = models.DateField(_('date of birthday'), null=True, blank=True)
     gender = models.CharField(_('gender'), max_length=1, choices=GENDER_CHOICES, default=MALE)
+    role = models.IntegerField(_('role'), choices=ROLE_CHOICES, default=USER)
     is_active = models.BooleanField(_('active'), default=False)
     is_staff = models.BooleanField(_('staff'), default=False)
     is_verified = models.BooleanField(_('verified'), default=False)

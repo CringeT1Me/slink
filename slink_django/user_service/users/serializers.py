@@ -32,6 +32,22 @@ class ProfileUserSerializer(serializers.ModelSerializer):
             'is_active', 'city', 'city_name', 'country', 'country_name', 'avatar_url', 'avatar_file'
         ]
 
+    def get_user(self, attrs):
+        username = attrs.get("username")
+        try:
+            # Ищем пользователя по username, email или phone
+            user = User.objects.get(
+                Q(username__iexact=username) |
+                Q(email__iexact=username) |
+                Q(phone__iexact=username)
+            )
+        except User.DoesNotExist:
+            raise serializers.ValidationError({"username": "Пользователь с такими данными не найден."})
+
+        # Сохраняем найденного пользователя для дальнейшего использования
+        self.user = user
+        return user
+
     def get_country_name(self, obj):
         # Проверяем, есть ли у пользователя страна
         if obj.country:

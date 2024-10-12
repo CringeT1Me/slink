@@ -134,6 +134,27 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres_posts:
+    image: postgres:15.8-alpine
+    hostname: ${POSTGRES_POSTS_HOST}
+    environment:
+      TZ: ${TIME_ZONE}
+      PGTZ: ${TIME_ZONE}
+      POSTGRES_DB: ${POSTGRES_POSTS_NAME}
+      POSTGRES_USER: ${POSTGRES_POSTS_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_POSTS_PASSWORD}
+    ports:
+      - "${POSTGRES_POSTS_PORT}:5432"
+    volumes:
+      - postgres_data_posts:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_POSTS_USER} -d ${POSTGRES_POSTS_NAME}'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   rabbitmq:
     build:
       context: ./slink_django/rabbitmq
@@ -248,7 +269,7 @@ services:
       context: ./slink_django/user_service
       dockerfile: Dockerfile
     command: bash -c "
-      python manage.py runserver 0.0.0.0:8000
+      gunicorn user_service.wsgi --bind 0.0.0.0:8000
       "
     env_file:
       - .env
@@ -329,6 +350,45 @@ services:
       - app-network
     restart: on-failure:30
 
+  posts_service_migrate:
+    build:
+      context: ./slink_django/posts_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py migrate
+      "
+    env_file:
+      - .env
+    volumes:
+      - posts_service_volume:/slink_django/posts_service
+    depends_on:
+      postgres_posts:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: on-failure:30
+
+  posts_service:
+    hostname: posts-service
+    build:
+      context: ./slink_django/posts_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py runserver 0.0.0.0:8000
+      "
+    env_file:
+      - .env
+    volumes:
+      - posts_service_volume:/slink_django/posts_service
+    depends_on:
+      postgres_posts:
+        condition: service_healthy
+      posts_service_migrate:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+    restart: on-failure:30
+
   kong:
     build:
       context: ./slink_kong
@@ -358,6 +418,7 @@ volumes:
   rabbitmq_data:
   postgres_data_users:
   postgres_data_friendship:
+  postgres_data_posts:
   redis_data_users:
     driver: local
   redis_data_friendship:
@@ -369,6 +430,8 @@ volumes:
   friendship_service_volume:
     driver: local
   files_service_volume:
+    driver: local
+  posts_service_volume:
     driver: local
 
 networks:

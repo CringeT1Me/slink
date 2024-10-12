@@ -11,17 +11,21 @@ class Album(models.Model):
 
 
 class PostAlbum(Album):
-    name = models.CharField(max_length=30, default='Посты', editable=False)
-
     class Meta:
         proxy = True
+
+    def save(self, *args, **kwargs):
+        self.name = 'Посты'
+        super().save(*args, **kwargs)
 
 
 class AvatarAlbum(Album):
-    name = models.CharField(max_length=30, default='Аватарки', editable=False)
-
     class Meta:
         proxy = True
+
+    def save(self, *args, **kwargs):
+        self.name = 'Аватарки'
+        super().save(*args, **kwargs)
 
 
 class Image(models.Model):

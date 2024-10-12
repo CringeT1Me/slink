@@ -1,8 +1,11 @@
+from gc import get_objects
+
 from cities_light.models import Country, City
 from djoser import signals
 from djoser.compat import get_user_email
 from djoser.conf import settings
 from djoser.views import UserViewSet
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
@@ -11,7 +14,7 @@ from rest_framework import status, generics
 from users.models import User
 from user_service.rabbitmq import receive_message
 from users.serializers import CountrySerializer, CitySerializer, SendFriendRequestSerializer, \
-    CancelFriendRequestSerializer
+    CancelFriendRequestSerializer, ProfileUserSerializer
 from users.tasks import send_friend_request, cancel_friend_request
 
 
@@ -111,6 +114,14 @@ class CustomUserViewSet(UserViewSet):
         serializer.user.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(["GET"], detail=False, url_path=r'(?P<username>[^/.]+)')
+    def retrieve_by_username(self, request, username=None):
+        queryset = User.objects.all()
+        user = get_object_or_404(queryset, username=username)
+        serializer = ProfileUserSerializer(user)
+        return Response(serializer.data)
+
 
 
 class UsernameCheckView(APIView):

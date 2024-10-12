@@ -100,6 +100,7 @@ DATABASES = {
         'PORT': 5432,  # Порт PostgreSQL
     }
 }
+
 RABBITMQ_USER = os.environ.get('RABBITMQ_USER')
 RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD')
 RABBITMQ_SERVICES_VHOST = os.environ.get('RABBITMQ_SERVICES_VHOST')

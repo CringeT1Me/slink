@@ -36,9 +36,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const store = useStore();
+const route = useRoute();
 const router = useRouter();
 
 const showMoreInfo = ref(false);
@@ -61,9 +62,9 @@ const user = ref({
   avatar_url: '',
 });
 
-const fetchUserProfile = async () => {
+const fetchUserProfile = async (username) => {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/users/me/', {
+    const response = await fetch(`http://localhost:8000/api/v1/users/${username}/`, {
       headers: {
         'Authorization': `Bearer ${store.state.accessToken}`,
       },
@@ -89,7 +90,10 @@ const fetchUserProfile = async () => {
 };
 
 onMounted(() => {
-  fetchUserProfile();
+  const { username } = route.params;
+  if (username) {
+    fetchUserProfile(username);
+  }
 });
 </script>
 

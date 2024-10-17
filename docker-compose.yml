@@ -93,6 +93,30 @@ services:
       - .env
     restart: on-failure:30
 
+  celery_posts:
+    build:
+      context: ./slink_django/posts_service
+      dockerfile: Dockerfile
+    command: [ "celery", "-A", "posts_service", "worker", "--loglevel=info", "--hostname=celery_posts@%h" ]
+    volumes:
+      - posts_service_volume:/slink_django/posts_service/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis_posts:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "celery", "-A", "posts_service", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    networks:
+      - app-network
+    env_file:
+      - .env
+    restart: on-failure:30
+
   flower:
     image: mher/flower:2.0.1
     command: ["celery", "flower"]
@@ -104,10 +128,6 @@ services:
       - "5555:5555"
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      celery_users:
-        condition: service_healthy
-      celery_friendship:
         condition: service_healthy
     networks:
       - app-network
@@ -233,6 +253,24 @@ services:
       TZ: ${TIME_ZONE}
     volumes:
       - redis_data_files:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis_posts:
+    image: redis:alpine3.20
+    hostname: ${REDIS_POSTS_HOST}
+    command: redis-server --requirepass ${REDIS_POSTS_PASSWORD}
+    ports:
+      - "${REDIS_POSTS_PORT}:6379"
+    environment:
+      TZ: ${TIME_ZONE}
+    volumes:
+      - redis_data_posts:/data
     networks:
       - app-network
     healthcheck:
@@ -383,6 +421,34 @@ services:
     depends_on:
       postgres_posts:
         condition: service_healthy
+      redis_posts:
+        condition: service_healthy
+      posts_service_migrate:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+    restart: on-failure:30
+
+  posts_service_consumer:
+    build:
+      context: ./slink_django/posts_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      python manage.py start_rabbitmq_consumer
+      "
+    env_file:
+      - .env
+    volumes:
+      - posts_service_volume:/slink_django/posts_service
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres_posts:
+        condition: service_healthy
+      redis_posts:
+        condition: service_healthy
+      celery_posts:
+        condition: service_healthy
       posts_service_migrate:
         condition: service_completed_successfully
     networks:
@@ -424,6 +490,8 @@ volumes:
   redis_data_friendship:
     driver: local
   redis_data_files:
+    driver: local
+  redis_data_posts:
     driver: local
   user_service_volume:
     driver: local

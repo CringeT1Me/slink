@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     
     'posts',
     'albums',
+    'rabbitmq'
 ]
 
 MIDDLEWARE = [
@@ -57,6 +58,28 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'console': {
+            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+        },
+    },
+    'loggers': {
+        '': {
+            'level': 'INFO',
+            'handlers': ['console'],
+        },
+    },
+}
 
 ROOT_URLCONF = 'posts_service.urls'
 
@@ -97,6 +120,43 @@ DATABASES = {
         'PORT': 5432,  # Порт PostgreSQL
     }
 }
+
+RABBITMQ_USER = os.environ.get('RABBITMQ_USER')
+RABBITMQ_PASSWORD = os.environ.get('RABBITMQ_PASSWORD')
+RABBITMQ_SERVICES_VHOST = os.environ.get('RABBITMQ_SERVICES_VHOST')
+RABBITMQ_CELERY_VHOST = os.environ.get('RABBITMQ_CELERY_VHOST')
+RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT')
+RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT')
+RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST')
+
+
+REDIS_POSTS_PASSWORD= os.environ.get('REDIS_POSTS_PASSWORD')
+REDIS_POSTS_HOST = os.environ.get('REDIS_POSTS_HOST')
+REDIS_POSTS_PORT = '6379'
+
+# Настройка брокера для Celery (RabbitMQ)
+CELERY_BROKER_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_CELERY_VHOST}'  # Или замени на свои параметры подключения к RabbitMQ
+
+# Настройка backend для хранения результатов (можно Redis)
+CELERY_RESULT_BACKEND = f'redis://:{REDIS_POSTS_PASSWORD}@{REDIS_POSTS_HOST}:{REDIS_POSTS_PORT}/0'  # Redis используется для хранения результатов
+
+# Опционально: Настройка задач на выполнение повторных попыток при неудаче
+CELERY_TASK_DEFAULT_QUEUE = 'posts_service_queue'
+CELERY_TASK_DEFAULT_EXCHANGE = 'posts_service_exchange'
+CELERY_TASK_DEFAULT_ROUTING_KEY = 'posts_service_routing_key'
+
+# Таймаут на выполнение задач (например, 1 час)
+CELERY_TASK_TIME_LIMIT = 60*5
+
+# Настройка сериализаторов
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = False
+# Опционально: Включить/выключить отслеживание завершенных задач (можно выключить, если результаты не нужны)
+CELERY_IGNORE_RESULT = False
 
 
 # Password validation

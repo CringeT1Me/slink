@@ -8,7 +8,7 @@ def send_message(queue, message, response_queue):
         pika.ConnectionParameters(
             host=settings.RABBITMQ_HOST,  # Проверьте здесь правильность хоста
             port=int(settings.RABBITMQ_PORT),
-            virtual_host=settings.RABBITMQ_VHOST,  # Убедитесь, что порт числовой
+            virtual_host=settings.RABBITMQ_SERVICES_VHOST,  # Убедитесь, что порт числовой
             credentials=credentials
         )
     )

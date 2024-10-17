@@ -1,2 +1,2 @@
 .env
-slink_django/**/.venv/
+**/.venv/

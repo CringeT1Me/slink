@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     
     'posts',
     'albums',
-    'rabbitmq'
 ]
 
 MIDDLEWARE = [
@@ -58,28 +57,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'console': {
-            'format': '%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'console',
-        },
-    },
-    'loggers': {
-        '': {
-            'level': 'INFO',
-            'handlers': ['console'],
-        },
-    },
-}
 
 ROOT_URLCONF = 'posts_service.urls'
 
@@ -129,57 +106,31 @@ RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT')
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST')
 
+REDIS_RESULT_BACKEND_PASSWORD = os.environ.get('REDIS_RESULT_BACKEND_PASSWORD')
+REDIS_RESULT_BACKEND_HOST = os.environ.get('REDIS_RESULT_BACKEND_HOST')
+REDIS_RESULT_BACKEND_PORT = '6379'
 
-REDIS_POSTS_PASSWORD= os.environ.get('REDIS_POSTS_PASSWORD')
-REDIS_POSTS_HOST = os.environ.get('REDIS_POSTS_HOST')
-REDIS_POSTS_PORT = '6379'
+CELERY_BROKER_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_CELERY_VHOST}'
 
-# Настройка брокера для Celery (RabbitMQ)
-CELERY_BROKER_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_CELERY_VHOST}'  # Или замени на свои параметры подключения к RabbitMQ
+CELERY_RESULT_BACKEND = f'redis://:{REDIS_RESULT_BACKEND_PASSWORD}@{REDIS_RESULT_BACKEND_HOST}:{REDIS_RESULT_BACKEND_PORT}/0'
 
-# Настройка backend для хранения результатов (можно Redis)
-CELERY_RESULT_BACKEND = f'redis://:{REDIS_POSTS_PASSWORD}@{REDIS_POSTS_HOST}:{REDIS_POSTS_PORT}/0'  # Redis используется для хранения результатов
+CELERY_TASK_DEFAULT_QUEUE = 'default_queue'
+CELERY_TASK_DEFAULT_EXCHANGE = 'default_exchange'
+CELERY_TASK_DEFAULT_ROUTING_KEY = 'default_routing_key'
 
-# Опционально: Настройка задач на выполнение повторных попыток при неудаче
-CELERY_TASK_DEFAULT_QUEUE = 'posts_service_queue'
-CELERY_TASK_DEFAULT_EXCHANGE = 'posts_service_exchange'
-CELERY_TASK_DEFAULT_ROUTING_KEY = 'posts_service_routing_key'
-
-# Таймаут на выполнение задач (например, 1 час)
 CELERY_TASK_TIME_LIMIT = 60*5
 
-# Настройка сериализаторов
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
-# Опционально: Включить/выключить отслеживание завершенных задач (можно выключить, если результаты не нужны)
 CELERY_IGNORE_RESULT = False
 
-
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
+REDIS_POSTS_PASSWORD= os.environ.get('REDIS_POSTS_PASSWORD')
+REDIS_POSTS_HOST = os.environ.get('REDIS_POSTS_HOST')
+REDIS_POSTS_PORT = '6379'
 
 LANGUAGE_CODE = 'en-us'
 

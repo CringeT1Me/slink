@@ -74,35 +74,31 @@ RABBITMQ_PORT = os.environ.get('RABBITMQ_PORT')
 RABBITMQ_MANAGEMENT_PORT = os.environ.get('RABBITMQ_MANAGEMENT_PORT')
 RABBITMQ_HOST = os.environ.get('RABBITMQ_HOST')
 
+REDIS_RESULT_BACKEND_PASSWORD = os.environ.get('REDIS_RESULT_BACKEND_PASSWORD')
+REDIS_RESULT_BACKEND_HOST = os.environ.get('REDIS_RESULT_BACKEND_HOST')
+REDIS_RESULT_BACKEND_PORT = '6379'
 
-REDIS_FRIENDSHIP_PASSWORD= os.environ.get('REDIS_FRIENDSHIP_PASSWORD')
-REDIS_FRIENDSHIP_HOST = os.environ.get('REDIS_FRIENDSHIP_HOST')
-REDIS_FRIENDSHIP_PORT = os.environ.get('REDIS_FRIENDSHIP_PORT')
+CELERY_BROKER_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_CELERY_VHOST}'
 
-# Настройка брокера для Celery (RabbitMQ)
-CELERY_BROKER_URL = f'amqp://{RABBITMQ_USER}:{RABBITMQ_PASSWORD}@{RABBITMQ_HOST}:{RABBITMQ_PORT}/{RABBITMQ_CELERY_VHOST}'  # Или замени на свои параметры подключения к RabbitMQ
+CELERY_RESULT_BACKEND = f'redis://:{REDIS_RESULT_BACKEND_PASSWORD}@{REDIS_RESULT_BACKEND_HOST}:{REDIS_RESULT_BACKEND_PORT}/0'
 
-# Настройка backend для хранения результатов (можно Redis)
-CELERY_RESULT_BACKEND = f'redis://:{REDIS_FRIENDSHIP_PASSWORD}@{REDIS_FRIENDSHIP_HOST}:{REDIS_FRIENDSHIP_PORT}/0'  # Redis используется для хранения результатов
+CELERY_TASK_DEFAULT_QUEUE = 'default_queue'
+CELERY_TASK_DEFAULT_EXCHANGE = 'default_exchange'
+CELERY_TASK_DEFAULT_ROUTING_KEY = 'default_routing_key'
 
-# Опционально: Настройка задач на выполнение повторных попыток при неудаче
-CELERY_TASK_DEFAULT_QUEUE = 'friendship_service_queue'
-CELERY_TASK_DEFAULT_EXCHANGE = 'friendship_service_exchange'
-CELERY_TASK_DEFAULT_ROUTING_KEY = 'friendship_service_routing_key'
-
-# Таймаут на выполнение задач (например, 1 час)
 CELERY_TASK_TIME_LIMIT = 60*5
 
-# Настройка сериализаторов
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
-# Опционально: Включить/выключить отслеживание завершенных задач (можно выключить, если результаты не нужны)
 CELERY_IGNORE_RESULT = False
 
+REDIS_FRIENDSHIP_PASSWORD= os.environ.get('REDIS_FRIENDSHIP_PASSWORD')
+REDIS_FRIENDSHIP_HOST = os.environ.get('REDIS_FRIENDSHIP_HOST')
+REDIS_FRIENDSHIP_PORT = os.environ.get('REDIS_FRIENDSHIP_PORT')
 
 STATIC_URL = 'static/'
 

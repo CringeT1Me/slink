@@ -6,9 +6,7 @@ from celery import Celery
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'user_service.settings')
 
 app = Celery('user_service')
-
 # Загружаем настройки из конфигурации Django с префиксом 'CELERY_'
 app.config_from_object('django.conf:settings', namespace='CELERY')
-
 # Автоматически находит задачи в зарегистрированных приложениях Django
 app.autodiscover_tasks()

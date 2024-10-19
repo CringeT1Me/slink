@@ -33,6 +33,10 @@ services:
         condition: service_healthy
       redis_users:
         condition: service_healthy
+      postgres_users:
+        condition: service_healthy
+      redis_result_backend:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "celery", "-A", "user_service", "status" ]
       interval: 30s
@@ -56,6 +60,10 @@ services:
       rabbitmq:
         condition: service_healthy
       redis_friendship:
+        condition: service_healthy
+      postgres_friendship:
+        condition: service_healthy
+      redis_result_backend:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "celery", "-A", "friendship_service", "status" ]
@@ -81,6 +89,8 @@ services:
         condition: service_healthy
       redis_files:
         condition: service_healthy
+      redis_result_backend:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "celery", "-A", "files_service", "status" ]
       interval: 30s
@@ -102,6 +112,10 @@ services:
       - posts_service_volume:/slink_django/posts_service/
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      postgres_posts:
+        condition: service_healthy
+      redis_result_backend:
         condition: service_healthy
       redis_posts:
         condition: service_healthy
@@ -174,7 +188,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
+  
   rabbitmq:
     build:
       context: ./slink_django/rabbitmq
@@ -206,6 +220,24 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+  
+  redis_result_backend:
+    image: redis:alpine3.20
+    hostname: ${REDIS_RESULT_BACKEND_HOST}
+    command: redis-server --requirepass ${REDIS_RESULT_BACKEND_PASSWORD}
+    ports:
+      - "${REDIS_RESULT_BACKEND_PORT}:6379"
+    environment:
+      TZ: ${TIME_ZONE}
+    volumes:
+      - redis_data_result_backend:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis_users:
     image: redis:alpine3.20
@@ -292,11 +324,7 @@ services:
     volumes:
       - user_service_volume:/slink_django/user_service
     depends_on:
-      rabbitmq:
-        condition: service_healthy
       postgres_users:
-        condition: service_healthy
-      redis_users:
         condition: service_healthy
     networks:
       - app-network
@@ -354,11 +382,7 @@ services:
     volumes:
       - friendship_service_volume:/slink_django/friendship_service
     depends_on:
-      rabbitmq:
-        condition: service_healthy
       postgres_friendship:
-        condition: service_healthy
-      redis_friendship:
         condition: service_healthy
     networks:
       - app-network
@@ -429,32 +453,6 @@ services:
       - app-network
     restart: on-failure:30
 
-  posts_service_consumer:
-    build:
-      context: ./slink_django/posts_service
-      dockerfile: Dockerfile
-    command: bash -c "
-      python manage.py start_rabbitmq_consumer
-      "
-    env_file:
-      - .env
-    volumes:
-      - posts_service_volume:/slink_django/posts_service
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres_posts:
-        condition: service_healthy
-      redis_posts:
-        condition: service_healthy
-      celery_posts:
-        condition: service_healthy
-      posts_service_migrate:
-        condition: service_completed_successfully
-    networks:
-      - app-network
-    restart: on-failure:30
-
   kong:
     build:
       context: ./slink_kong
@@ -485,6 +483,8 @@ volumes:
   postgres_data_users:
   postgres_data_friendship:
   postgres_data_posts:
+  redis_data_result_backend:
+    driver: local
   redis_data_users:
     driver: local
   redis_data_friendship:

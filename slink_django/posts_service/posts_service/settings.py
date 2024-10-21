@@ -30,8 +30,7 @@ ALLOWED_HOSTS = ['posts-service', 'localhost']
 
 TIME_ZONE = os.environ.get('TIME_ZONE')
 USE_TZ = True
-
-# Application definition
+DATETIME_FORMAT = '%d-%m-%Y %H:%M:%S'
 
 INSTALLED_APPS = [
     'django.contrib.admin',

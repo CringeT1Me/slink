@@ -12,10 +12,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
 from users.models import User
-from user_service.rabbitmq import receive_message
 from users.serializers import CountrySerializer, CitySerializer, SendFriendRequestSerializer, \
     CancelFriendRequestSerializer, ProfileUserSerializer
-from users.tasks import send_friend_request, cancel_friend_request
 
 
 class CustomUserViewSet(UserViewSet):
@@ -157,46 +155,3 @@ class CityListView(generics.ListAPIView):
             queryset = queryset.filter(search_names__icontains=query)
         return queryset
 
-class SendFriendRequestView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        serializer = SendFriendRequestSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            from_user_id = serializer.validated_data['from_user_id']
-            to_user_id = serializer.validated_data['to_user_id']
-            response = send_friend_request(from_user_id, to_user_id)
-            if response['status'] == 'success':
-                return Response({'message': response['message']}, status=status.HTTP_200_OK)
-            return Response({'message': response['message']}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class CancelFriendRequestView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        serializer = CancelFriendRequestSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            from_user_id = serializer.validated_data['from_user_id']
-            to_user_id = serializer.validated_data['to_user_id']
-            response = cancel_friend_request(from_user_id, to_user_id)
-            if response['status'] == 'success':
-                return Response({'message': response['message']}, status=status.HTTP_200_OK)
-            return Response({'message': response['message']}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class DeclineFriendRequestView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, *args, **kwargs):
-        serializer = SendFriendRequestSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            from_user_id = serializer.validated_data['from_user_id']
-            to_user_id = serializer.validated_data['to_user_id']
-            send_friend_request(from_user_id, to_user_id)
-            response = receive_message('response_queue')
-            if response['status'] == 'success':
-                return Response({'message': response['message']}, status=status.HTTP_200_OK)
-            return Response({'message': response['message']}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

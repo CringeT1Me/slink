@@ -49,34 +49,6 @@ services:
       - .env
     restart: on-failure:30
 
-  celery_friendship:
-    build:
-      context: ./slink_django/friendship_service
-      dockerfile: Dockerfile
-    command: [ "celery", "-A", "friendship_service", "worker", "--loglevel=info", "--hostname=celery_friendship@%h" ]
-    volumes:
-      - friendship_service_volume:/slink_django/friendship_service/
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      redis_friendship:
-        condition: service_healthy
-      postgres_friendship:
-        condition: service_healthy
-      redis_result_backend:
-        condition: service_healthy
-    healthcheck:
-      test: [ "CMD", "celery", "-A", "friendship_service", "status" ]
-      interval: 30s
-      timeout: 10s
-      retries: 10
-      start_period: 10s
-    networks:
-      - app-network
-    env_file:
-      - .env
-    restart: on-failure:30
-
   celery_files:
     build:
       context: ./slink_django/files_service
@@ -146,27 +118,6 @@ services:
     networks:
       - app-network
     restart: on-failure:30
-
-  postgres_friendship:
-    image: postgres:15.8-alpine
-    hostname: ${POSTGRES_FRIENDSHIP_HOST}
-    environment:
-      TZ: ${TIME_ZONE}
-      PGTZ: ${TIME_ZONE}
-      POSTGRES_DB: ${POSTGRES_FRIENDSHIP_NAME}
-      POSTGRES_USER: ${POSTGRES_FRIENDSHIP_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_FRIENDSHIP_PASSWORD}
-    ports:
-      - "${POSTGRES_FRIENDSHIP_PORT}:5432"
-    volumes:
-      - postgres_data_friendship:/var/lib/postgresql/data
-    networks:
-      - app-network
-    healthcheck:
-      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_FRIENDSHIP_USER} -d ${POSTGRES_FRIENDSHIP_NAME}'" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   postgres_posts:
     image: postgres:15.8-alpine
@@ -249,24 +200,6 @@ services:
       TZ: ${TIME_ZONE}
     volumes:
       - redis_data_users:/data
-    networks:
-      - app-network
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis_friendship:
-    image: redis:alpine3.20
-    hostname: ${REDIS_FRIENDSHIP_HOST}
-    command: redis-server --requirepass ${REDIS_FRIENDSHIP_PASSWORD}
-    ports:
-      - "${REDIS_FRIENDSHIP_PORT}:6379"
-    environment:
-      TZ: ${TIME_ZONE}
-    volumes:
-      - redis_data_friendship:/data
     networks:
       - app-network
     healthcheck:
@@ -368,50 +301,6 @@ services:
     networks:
       - app-network
 
-  friendship_service_migrate:
-    build:
-      context: ./slink_django/friendship_service
-      dockerfile: Dockerfile
-    command: bash -c "
-      python manage.py makemigrations
-      && sleep 5
-      && python manage.py migrate
-      "
-    env_file:
-      - .env
-    volumes:
-      - friendship_service_volume:/slink_django/friendship_service
-    depends_on:
-      postgres_friendship:
-        condition: service_healthy
-    networks:
-      - app-network
-    restart: on-failure:30
-
-  friendship_service:
-    build:
-      context: ./slink_django/friendship_service
-      dockerfile: Dockerfile
-    command: bash -c "
-      python manage.py start_rabbitmq_consumer
-      "
-    env_file:
-      - .env
-    volumes:
-      - friendship_service_volume:/slink_django/friendship_service
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      postgres_friendship:
-        condition: service_healthy
-      redis_friendship:
-        condition: service_healthy
-      friendship_service_migrate:
-        condition: service_completed_successfully
-    networks:
-      - app-network
-    restart: on-failure:30
-
   posts_service_migrate:
     build:
       context: ./slink_django/posts_service
@@ -436,7 +325,7 @@ services:
       context: ./slink_django/posts_service
       dockerfile: Dockerfile
     command: bash -c "
-      python manage.py runserver 0.0.0.0:8000
+      gunicorn posts_service.wsgi --bind 0.0.0.0:8000
       "
     env_file:
       - .env
@@ -481,21 +370,16 @@ services:
 volumes:
   rabbitmq_data:
   postgres_data_users:
-  postgres_data_friendship:
   postgres_data_posts:
   redis_data_result_backend:
     driver: local
   redis_data_users:
-    driver: local
-  redis_data_friendship:
     driver: local
   redis_data_files:
     driver: local
   redis_data_posts:
     driver: local
   user_service_volume:
-    driver: local
-  friendship_service_volume:
     driver: local
   files_service_volume:
     driver: local

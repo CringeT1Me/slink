@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'djoser',
     'rest_framework',
     'cities_light',
-    'storages',
     'users'
 ]
 
@@ -158,11 +157,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
-]
-
-CORS_ALLOWED_ORIGINS = [
-    "https://127.0.0.1:8080",
-    "https://localhost:8080",
 ]
 
 REST_FRAMEWORK = {

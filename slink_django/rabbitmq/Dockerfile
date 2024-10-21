@@ -1,5 +1,7 @@
 FROM rabbitmq:4.0.0-rc.1-management-alpine
 
+USER root
+
 RUN apk add --no-cache gettext
 COPY conf/rabbitmq.conf.template /etc/rabbitmq/rabbitmq.conf.template
 COPY conf/definitions.json.template /etc/rabbitmq/definitions.json.template

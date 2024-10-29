@@ -1,46 +1,55 @@
 from django.db import models
+from django.db.models import Q
+from django.contrib.auth import get_user_model
+from friendship.exceptions import FriendRequestAlreadyExists, FriendRequestDoesNotExist
 
-# Create your models here.
-
-class FriendRequestAlreadyExists(Exception):
-    pass
-
-class FriendRequestDoesNotExist(Exception):
-    pass
-
+User = get_user_model()
+PENDING = 'pending'
+ACCEPTED = 'accepted'
+STATUS_CHOICES = {
+    (PENDING, 'В ожидании'),
+    (ACCEPTED, 'Принят'),
+}
 class Friendship(models.Model):
-    PENDING = 'pending'
-    ACCEPTED = 'accepted'
-    STATUS_CHOICES = {
-        (PENDING, 'В ожидании'),
-        (ACCEPTED, 'Принят'),
-    }
-    from_user_id = models.UUIDField()  # or IntegerField depending on your user model's primary key
-    to_user_id = models.UUIDField()
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=PENDING)  # e.g., pending, accepted, declined
+
+    from_user = models.ForeignKey(to=User, related_name='sender', on_delete=models.CASCADE)
+    to_user = models.ForeignKey(to=User, related_name='receiver', on_delete=models.CASCADE)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default=PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('from_user_id', 'to_user_id')
+        constraints = [
+            models.UniqueConstraint(fields=['from_user', 'to_user'], name='unique_friendship')
+        ]
 
     @staticmethod
-    def add_friend_request(from_user_id, to_user_id):
+    def get_friend_list(user):
+        friends_list = Friendship.objects.filter(
+            Q(from_user=user) | Q(to_user=user),
+            status=ACCEPTED
+        )
+        return friends_list
+
+    @staticmethod
+    def add_friend_request(from_user, to_user):
         friendship, created = Friendship.objects.get_or_create(
-            from_user_id=from_user_id,
-            to_user_id=to_user_id,
+            from_user=from_user,
+            to_user=to_user,
             defaults={'status': Friendship.PENDING}  # Устанавливаем статус по умолчанию
         )
         if not created:
             raise FriendRequestAlreadyExists('Заявка в друзья уже отправлена.')
-        return friendship
+        return created
 
     @staticmethod
-    def delete_friend_request(from_user_id, to_user_id):
+    def delete_friend_request(from_user, to_user):
         try:
             friend_request = Friendship.objects.get(
-                from_user_id=from_user_id,
-                to_user_id=to_user_id
+                from_user=from_user,
+                to_user=to_user
             )
             friend_request.delete()
         except Friendship.DoesNotExist:
             raise FriendRequestDoesNotExist('Такой заявки в друзья не существует.')
+
+

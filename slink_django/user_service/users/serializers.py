@@ -22,13 +22,12 @@ User = get_user_model()
 class ProfileUserSerializer(serializers.ModelSerializer):
     country_name = serializers.SerializerMethodField()
     city_name = serializers.SerializerMethodField()
-    # Поле для записи (прием файла)
     avatar_file = serializers.ImageField(write_only=True, required=False)
 
     class Meta:
         model = User
         fields = [
-            'username', 'first_name', 'last_name', 'email', 'phone', 'description',
+            'id', 'username', 'first_name', 'last_name', 'email', 'phone', 'description',
             'is_active', 'city', 'city_name', 'country', 'country_name', 'avatar_url', 'avatar_file'
         ]
 
@@ -49,37 +48,35 @@ class ProfileUserSerializer(serializers.ModelSerializer):
         return user
 
     def get_country_name(self, obj):
-        # Проверяем, есть ли у пользователя страна
         if obj.country:
-            return obj.country.name  # Возвращаем название страны
-        return None  # Если страна не указана, возвращаем None
+            return obj.country.name
+        return None
 
     def get_city_name(self, obj):
-        # Проверяем, есть ли у пользователя город
         if obj.city:
-            return obj.city.name  # Возвращаем название города
-        return None  # Если город не указан, возвращаем None
+            return obj.city.name
+        return None
 
     def update(self, instance, validated_data):
-        # Обрабатываем загрузку аватара, если он есть
         avatar_file = validated_data.pop('avatar_file', None)
 
         if avatar_file:
-            # Здесь вызывайте логику отправки на files_service и получите URL
             files_service_url = f"{settings.FILES_SERVICE_URL}/api/v1/upload-avatar/"
             files = {'file': avatar_file}
             response = requests.post(files_service_url, files=files)
 
             if response.status_code == 200:
                 avatar_url = response.json().get('url')
-                print('bugagashke')
                 instance.avatar_url = avatar_url
             else:
                 raise serializers.ValidationError("Failed to upload avatar to the files service.")
 
-        # Остальные данные обновляем стандартно
         return super().update(instance, validated_data)
 
+class FriendshipUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'avatar_url']
 
 class CustomSendEmailResetSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -87,7 +84,6 @@ class CustomSendEmailResetSerializer(serializers.Serializer):
     def get_user(self, attrs):
         username = attrs.get("username")
         try:
-            # Ищем пользователя по username, email или phone
             user = User.objects.get(
                 Q(username__iexact=username) |
                 Q(email__iexact=username) |
@@ -96,7 +92,6 @@ class CustomSendEmailResetSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError({"username": "Пользователь с такими данными не найден."})
 
-        # Сохраняем найденного пользователя для дальнейшего использования
         self.user = user
         return user
 
@@ -171,29 +166,6 @@ class CitySerializer(serializers.ModelSerializer):
     class Meta:
         model = City
         fields = ['id', 'display_name', 'country']
-
-class SendFriendRequestSerializer(serializers.Serializer):
-    to_user_username = serializers.CharField()
-
-    def validate(self, attrs):
-        to_user_username = attrs.get('to_user_username')
-        from_user = self.context['request'].user
-        try:
-            to_user = User.objects.get(username=to_user_username)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("Получатель запроса не существует.")
-
-        if from_user == to_user:
-            raise ValidationError("Нельзя отправить запрос самому себе.")
-
-        attrs['from_user_id'] = from_user.id
-        attrs['to_user_id'] = to_user.id
-
-        return attrs
-
-class CancelFriendRequestSerializer(SendFriendRequestSerializer):
-    pass
-
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import SimpleRouter
 
+from friendship.views import FriendshipView
 from users.views import UsernameCheckView, CustomUserViewSet, CountryListView, CityListView
 
 router = SimpleRouter()
@@ -13,8 +14,7 @@ urlpatterns = [
     path('api/v1/cities/', CityListView.as_view(), name='city-list'),
     path('api/v1/check-username/<str:username>/', UsernameCheckView.as_view(), name='check-username'),
     path('api/v1/users/', include('djoser.urls.jwt')),
-    # path('api/v1/users/send_friend_request/', SendFriendRequestView.as_view(), name='send-friend-request'),
-    # path('api/v1/users/cancel_friend_request/', CancelFriendRequestView.as_view(), name='cancel-friend-request')
+    path('api/v1/friendship/', FriendshipView.as_view(), name='friendship')
 ]
 
 urlpatterns += router.urls

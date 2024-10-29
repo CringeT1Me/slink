@@ -11,9 +11,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
+
+from friendship.models import Friendship, ACCEPTED
+from django.db.models import Q
 from users.models import User
-from users.serializers import CountrySerializer, CitySerializer, SendFriendRequestSerializer, \
-    CancelFriendRequestSerializer, ProfileUserSerializer
+from users.serializers import CountrySerializer, CitySerializer, ProfileUserSerializer, FriendshipUserSerializer
 
 
 class CustomUserViewSet(UserViewSet):
@@ -104,10 +106,8 @@ class CustomUserViewSet(UserViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Используем validated_data вместо data
         new_email = serializer.validated_data["new_email"]
 
-        # Обновляем email пользователя
         serializer.user.email = new_email
         serializer.user.save()
 
@@ -120,6 +120,17 @@ class CustomUserViewSet(UserViewSet):
         serializer = ProfileUserSerializer(user)
         return Response(serializer.data)
 
+    @action(['GET'], detail=False, url_path=r'(?P<username>[^/.]+)/friends')
+    def friends(self, request, *args, **kwargs):
+        username = kwargs.get('username')
+        user = get_object_or_404(User, username=username)
+
+        friends = Friendship.objects.filter(
+            Q(from_user=user) | Q(to_user=user),
+            status=ACCEPTED
+        )
+        serializer = ProfileUserSerializer(friends, many=True)
+        return Response(serializer.data)
 
 
 class UsernameCheckView(APIView):

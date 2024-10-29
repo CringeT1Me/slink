@@ -24,9 +24,8 @@ services:
 
       - name: friendship-v1
         paths:
-          - /api/v1/users/send_friend_request/
-          - /api/v1/users/cancel_friend_request/
-        methods: ["POST", "OPTIONS"]
+          - /api/v1/friendship/
+        methods: ["POST", "DELETE", "OPTIONS"]
         preserve_host: true
         strip_path: false
 
@@ -76,6 +75,7 @@ services:
         methods: [ "POST", "OPTIONS" ]
         preserve_host: true
         strip_path: false
+
   - name: posts_service
     url: http://posts-service:8000
     routes:

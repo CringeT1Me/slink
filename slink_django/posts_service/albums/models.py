@@ -1,5 +1,8 @@
 from django.db import models
 
+from albums.managers import AvatarAlbumManager, PostAlbumManager
+
+
 # Create your models here.
 class Album(models.Model):
     user = models.UUIDField()
@@ -11,6 +14,8 @@ class Album(models.Model):
 
 
 class PostAlbum(Album):
+    objects = PostAlbumManager()
+
     class Meta:
         proxy = True
 
@@ -20,13 +25,14 @@ class PostAlbum(Album):
 
 
 class AvatarAlbum(Album):
+    objects = AvatarAlbumManager()
+
     class Meta:
         proxy = True
 
     def save(self, *args, **kwargs):
         self.name = 'Аватарки'
         super().save(*args, **kwargs)
-
 
 class Image(models.Model):
     user = models.UUIDField()

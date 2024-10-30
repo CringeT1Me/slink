@@ -1,20 +1,11 @@
 import uuid
-from io import BytesIO
 
-import boto3
-from PIL import Image
 from django.conf import settings
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.http import JsonResponse
-from django.shortcuts import render
-from rest_framework import status
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from files.serializers import FileUploadSerializer
-from files.storages import PublicAvatarStorage
-from files.tasks import process_and_upload_avatar
+from files.storages import PublicAvatarStorage, PublicImageStorage
+from files.tasks import process_and_upload_avatar, process_and_upload_image
 
 
 class UploadAvatar(APIView):
@@ -38,3 +29,26 @@ class UploadAvatar(APIView):
 
         except Exception as e:
             return JsonResponse({'error': f'Failed to upload file: {str(e)}'}, status=500)
+
+class UploadImages(APIView):
+    def post(self, request, *args, **kwargs):
+        files = request.FILES.getlist('files')
+        if not files:
+            return JsonResponse({'error': 'Файлы не обнаружены'}, status=400)
+        image_urls = []
+        for file in files:
+            if not file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+                file.name = f"{files.name}.jpg"
+            unique_file_name = f"{uuid.uuid4()}_{file.name}"
+
+            try:
+                process_and_upload_image.delay(file.read(), unique_file_name)
+
+                avatar_url = f"{settings.AWS_S3_ENDPOINT_URL}/{settings.AWS_STORAGE_BUCKET_NAME}/{PublicImageStorage.location}/{unique_file_name}"
+
+                image_urls.append(avatar_url)
+
+            except Exception as e:
+                return JsonResponse({'error': f'Не удалось загрузить изображение: {str(e)}'}, status=500)
+
+        return JsonResponse({'urls': image_urls}, status=200)

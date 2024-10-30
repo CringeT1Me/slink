@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get('POSTS_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG')
 ALLOWED_HOSTS = ['posts-service', 'localhost']
-
+FILES_SERVICE_URL = 'http://files-service:8000'
 
 TIME_ZONE = os.environ.get('TIME_ZONE')
 USE_TZ = True

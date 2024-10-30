@@ -19,6 +19,12 @@ class PublicAvatarStorage(S3Boto3Storage):
     file_overwrite = False
     custom_domain = False
 
+class PublicImageStorage(S3Boto3Storage):
+    location = 'media/images'
+    default_acl = 'public-read'
+    file_overwrite = False
+    custom_domain = False
+
 class PrivateMediaStorage(S3Boto3Storage):
     location = 'private'
     default_acl = 'private'

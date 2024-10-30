@@ -1,13 +1,14 @@
-from http.client import HTTPResponse
-
-from django.shortcuts import render, get_object_or_404
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import serializers
+from django.conf import settings
+import requests
 
-from posts.models import Post
+from albums.models import Image
+from posts.models import Post, PostImage
 from posts.serializers import PostSerializer
 
 
@@ -22,7 +23,22 @@ class PostViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user.id)
+        post = serializer.save(user=self.request.user.id)
+        images_data = self.request.data.getlist('images', [])
+
+        if images_data:
+            files_service_url = f"{settings.FILES_SERVICE_URL}/api/v1/upload-images/"
+            files = [('files', img) for img in images_data]
+            response = requests.post(files_service_url, files=files)
+
+            if response.status_code == 200:
+                image_urls = response.json().get('urls', [])
+                images = [Image(user=post.user, url=url) for url in image_urls]
+                Image.objects.bulk_create(images)
+                post_images = [PostImage(post=post, image=image) for image in images]
+                PostImage.objects.bulk_create(post_images)
+            else:
+                raise serializers.ValidationError("Не удалось загрузить изображения в files_service.")
 
     @action(methods=['POST'], detail=True, url_path='archive')
     def archive(self, request, pk=None):

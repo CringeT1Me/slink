@@ -10,7 +10,6 @@ from django.db import models
 from users.managers import UserManager
 
 
-# Create your models here.
 
 class User(AbstractBaseUser, PermissionsMixin):
     MALE = 'M'

@@ -3,6 +3,8 @@ from djoser.email import ActivationEmail, BaseDjoserEmail, ConfirmationEmail, Pa
     PasswordChangedConfirmationEmail, UsernameChangedConfirmationEmail
 from djoser import utils
 from djoser.conf import settings
+from templated_mail.mail import BaseEmailMessage
+
 
 class EmailChange(BaseDjoserEmail):
     template_name = "emails/email_change.html"
@@ -42,3 +44,19 @@ class CustomPasswordChangedConfirmationEmail(PasswordChangedConfirmationEmail):
 
 class CustomUsernameChangedConfirmationEmail(UsernameChangedConfirmationEmail):
     template_name = "emails/change_email.html"
+
+
+EMAILS = {}
+
+class TestActivationEmail(BaseEmailMessage):
+    template_name = "email/activation.html"
+
+    def get_context_data(self):
+        context = super().get_context_data()
+        user = context.get("user")
+        context["uid"] = utils.encode_uid(user.pk)
+        context["token"] = default_token_generator.make_token(user)
+        context["url"] = settings.ACTIVATION_URL.format(**context)
+        uid, token = context['uid'], context['token']
+        EMAILS[user.email] = {'uid': uid, 'token': token}
+        return context

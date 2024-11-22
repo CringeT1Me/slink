@@ -1,4 +1,3 @@
-from gc import get_objects
 
 from cities_light.models import Country, City
 from djoser import signals

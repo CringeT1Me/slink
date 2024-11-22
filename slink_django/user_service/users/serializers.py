@@ -100,7 +100,7 @@ class CustomSendEmailResetSerializer(serializers.Serializer):
 class CustomUserCreateSerializer(UserCreateSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'first_name', 'last_name')
+        fields = ('id', 'username', 'email', 'password', 'first_name', 'last_name')
 
     def validate(self, attrs):
         user = User(**attrs)

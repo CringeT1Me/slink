@@ -12,7 +12,15 @@ DATABASES = {
         'PORT': 5432,
     }
 }
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 DJOSER_EMAIL = {
     'activation': 'users.emails.TestActivationEmail'
 }

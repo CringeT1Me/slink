@@ -12,11 +12,15 @@ import requests
 @receiver(post_save, sender=get_user_model())
 def create_albums_signal(sender, instance, created, **kwargs):
     if created:
-        response = app.send_task('posts_service.albums_init',
-                                 args=[instance.id],
-                                 exchange='albums',
-                                 routing_key='albums.init'
-                                 )
-        print(response.get(timeout=15))
+        try:
+            response = app.send_task('posts_service.albums_init',
+                                     args=[instance.id],
+                                     exchange='albums',
+                                     routing_key='albums.init'
+                                     )
+            print(response.get(timeout=15))
+        except Exception:
+            print("Не удалось создать альбомы для пользователя в post_service")
+
 
 

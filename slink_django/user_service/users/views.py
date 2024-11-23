@@ -1,5 +1,7 @@
 
 from cities_light.models import Country, City
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from djoser import signals
 from djoser.compat import get_user_email
 from djoser.conf import settings
@@ -119,6 +121,7 @@ class CustomUserViewSet(UserViewSet):
         serializer = ProfileUserSerializer(user)
         return Response(serializer.data)
 
+    @method_decorator(cache_page(60 * 15))
     @action(['GET'], detail=False, url_path=r'(?P<username>[^/.]+)/friends')
     def friends(self, request, *args, **kwargs):
         username = kwargs.get('username')
@@ -131,14 +134,12 @@ class CustomUserViewSet(UserViewSet):
         serializer = ProfileUserSerializer(friends, many=True)
         return Response(serializer.data)
 
-
 class UsernameCheckView(APIView):
     def get(self, request, username):
         if User.objects.filter(username=username).exists():
             return Response({"available": False}, status=status.HTTP_200_OK)
         else:
             return Response({"available": True}, status=status.HTTP_200_OK)
-
 
 class CountryListView(generics.ListAPIView):
     serializer_class = CountrySerializer

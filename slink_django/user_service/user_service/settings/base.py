@@ -17,6 +17,13 @@ DEBUG = os.environ.get('DEBUG')
 
 HOST = 'user_service'
 
+INTERNAL_IPS = ['127.0.0.1',"0.0.0.0:8000"]
+
+import socket
+hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+INTERNAL_IPS += [".".join(ip.split(".")[:-1] + ["1"]) for ip in ips]
+
+
 TIME_ZONE = os.environ.get('TIME_ZONE')
 USE_TZ = True
 
@@ -31,14 +38,19 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'debug_toolbar',
+    'cachalot',
     'djoser',
     'rest_framework',
     'cities_light',
+
     'users',
     'friendship'
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

@@ -127,10 +127,18 @@ class CustomUserViewSet(UserViewSet):
         username = kwargs.get('username')
         user = get_object_or_404(User, username=username)
 
-        friends = Friendship.objects.filter(
+        friendships = Friendship.objects.filter(
             Q(from_user=user) | Q(to_user=user),
             status=ACCEPTED
         )
+
+        friends = []
+        for friendship in friendships:
+            if friendship.from_user == user:
+                friends.append(friendship.to_user)
+            else:
+                friends.append(friendship.from_user)
+
         serializer = ProfileUserSerializer(friends, many=True)
         return Response(serializer.data)
 

@@ -1,3 +1,4 @@
+from celery.bin.control import status
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
@@ -35,11 +36,25 @@ class Friendship(models.Model):
         friendship, created = Friendship.objects.get_or_create(
             from_user=from_user,
             to_user=to_user,
-            defaults={'status': Friendship.PENDING}  # Устанавливаем статус по умолчанию
+            defaults={'status': PENDING}
         )
         if not created:
             raise FriendRequestAlreadyExists('Заявка в друзья уже отправлена.')
         return created
+
+    @staticmethod
+    def accept_friend_request(from_user, to_user):
+        try:
+            friend_request = Friendship.objects.get(
+                from_user=to_user,
+                to_user=from_user,
+                status=PENDING
+            )
+            friend_request.status = ACCEPTED
+            friend_request.save()
+            return friend_request
+        except Friendship.DoesNotExist:
+            raise FriendRequestDoesNotExist('Такой заявки в друзья не существует.')
 
     @staticmethod
     def delete_friend_request(from_user, to_user):
@@ -52,4 +67,14 @@ class Friendship(models.Model):
         except Friendship.DoesNotExist:
             raise FriendRequestDoesNotExist('Такой заявки в друзья не существует.')
 
+    @staticmethod
+    def decline_friend_request(from_user, to_user):
+        try:
+            friend_request = Friendship.objects.get(
+                from_user=to_user,
+                to_user=from_user
+            )
+            friend_request.delete()
+        except Friendship.DoesNotExist:
+            raise FriendRequestDoesNotExist('Такой заявки в друзья не существует.')
 

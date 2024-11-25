@@ -10,10 +10,11 @@ User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
-class FriendshipPostSerializer(serializers.ModelSerializer):
+class FriendshipSerializer(serializers.ModelSerializer):
     class Meta:
         model = Friendship
-        fields = ['to_user', 'status']
+        fields = ['from_user', 'to_user', 'status']
+        read_only_fields = ['from_user', 'status']
 
     def validate_users(self, data):
         from_user = self.context['request'].user
@@ -24,23 +25,8 @@ class FriendshipPostSerializer(serializers.ModelSerializer):
 
         logger.debug(f'Отправитель: {from_user}, Получатель: {to_user}')
 
+        data['from_user'] = from_user
         return data
 
     def validate(self, data):
         return self.validate_users(data)
-
-
-class FriendshipDeleteSerializer(FriendshipPostSerializer):
-    decline = serializers.BooleanField()
-
-    class Meta(FriendshipPostSerializer.Meta):
-        fields = FriendshipPostSerializer.Meta.fields + ['decline']
-
-    def validate(self, data):
-        data = self.validate_users(data)
-
-        decline = data.get('decline')
-        if decline:
-            data['from_user'], data['to_user'] = data['to_user'], self.context['request'].user
-
-        return data

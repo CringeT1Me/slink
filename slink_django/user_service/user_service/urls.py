@@ -8,7 +8,9 @@ from friendship.views import FriendshipView
 from users.views import UsernameCheckView, CustomUserViewSet, CountryListView, CityListView
 
 router = SimpleRouter()
-router.register(r'api/v1/users', CustomUserViewSet)
+router.register(r'api/v1/users', CustomUserViewSet, basename='user')
+router.register(r'api/v1/friendship', FriendshipView, basename='friendship')
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,7 +18,6 @@ urlpatterns = [
     path('api/v1/cities/', cache_page(60 * 15)(CityListView.as_view()), name='city-list'),
     path('api/v1/check-username/<str:username>/', cache_page(60 * 15)(UsernameCheckView.as_view()), name='check-username'),
     path('api/v1/users/', include('djoser.urls.jwt')),
-    path('api/v1/friendship/', cache_page(60 * 15)(FriendshipView.as_view()), name='friendship')
 ]
 
 urlpatterns += router.urls

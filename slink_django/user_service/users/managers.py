@@ -6,9 +6,6 @@ class UserManager(BaseUserManager):
 
     def _create_user(self, username=None, first_name=None, last_name=None,
                      email=None, password=None, **extra_fields):
-        """
-        Creates and saves a User with the given email and password.
-        """
 
         if extra_fields.get('is_superuser'):
             user = self.model(

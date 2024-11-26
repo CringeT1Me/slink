@@ -1,26 +1,5 @@
 services:
 
-  postgres_test:
-    image: postgres:15.8-alpine
-    hostname: ${POSTGRES_TEST_HOST}
-    environment:
-      TZ: ${TIME_ZONE}
-      PGTZ: ${TIME_ZONE}
-      POSTGRES_DB: ${POSTGRES_TEST_NAME}
-      POSTGRES_USER: ${POSTGRES_TEST_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD}
-    ports:
-      - "${POSTGRES_TEST_PORT}:5432"
-    volumes:
-      - postgres_data_test:/var/lib/postgresql/data
-    networks:
-      - app-network
-    healthcheck:
-      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_TEST_USER} -d ${POSTGRES_TEST_NAME}'" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   postgres_users:
     image: postgres:15.8-alpine
     hostname: ${POSTGRES_USERS_HOST}
@@ -192,6 +171,10 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: "200m"
 
   redis_test:
     image: redis:alpine3.20
@@ -307,6 +290,7 @@ services:
       context: ./slink_django/user_service
       dockerfile: Dockerfile
     command: bash -c "
+      python manage.py collectstatic --noinput &
       gunicorn user_service.wsgi --bind 0.0.0.0:8000
       "
     env_file:
@@ -331,7 +315,7 @@ services:
       context: ./slink_django/user_service
       dockerfile: Dockerfile
     command: bash -c "
-      python manage.py test --keepdb
+      python manage.py test
       "
     env_file:
       - .env
@@ -340,7 +324,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      postgres_test:
+      postgres_users:
         condition: service_healthy
       redis_test:
         condition: service_healthy

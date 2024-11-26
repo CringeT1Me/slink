@@ -97,6 +97,9 @@ class FriendshipViewSetTest(APITestCase):
         self.assertEqual(friend_request.data['status'], PENDING)
 
     def test_cancel_friend_request(self):
+        """
+        Отмена заявки в друзья отправителем.
+        """
         url = reverse("jwt-create")
         user1_data = {
             "username": self.user1_info['username'],
@@ -116,6 +119,9 @@ class FriendshipViewSetTest(APITestCase):
         self.assertEqual(friend_request.status_code, status.HTTP_200_OK)
 
     def test_accept_friend_request(self):
+        """
+        Принятие запроса в друзья.
+        """
         url = reverse("jwt-create")
         user2_data = {
             "username": self.user2_info['username'],
@@ -136,6 +142,9 @@ class FriendshipViewSetTest(APITestCase):
         self.assertEqual(friend_request.data['status'], ACCEPTED)
 
     def test_get_user1_friend_list(self):
+        """
+        Просмотр списка друзей первого пользователя.
+        """
         self.test_accept_friend_request()
         url = reverse("jwt-create")
         user1_data = {
@@ -170,7 +179,9 @@ class FriendshipViewSetTest(APITestCase):
         self.assertEqual(friend_request.data, expected_data)
 
     def test_get_user2_friend_list(self):
-
+        """
+        Просмотр списка друзей второго пользователя.
+        """
         self.test_accept_friend_request()
         url = reverse("jwt-create")
         user2_data = {
@@ -184,7 +195,6 @@ class FriendshipViewSetTest(APITestCase):
 
         url = f'/api/v1/users/{self.user2_info['username']}/friends/'
         friend_request = self.client.get(url)
-        print(friend_request.data)
         self.assertEqual(friend_request.status_code, status.HTTP_200_OK)
 
         expected_data = [{
@@ -208,7 +218,9 @@ class FriendshipViewSetTest(APITestCase):
 
 
     def test_decline_friend_request(self):
-        """Проверка генерации токена."""
+        """
+        Отклонение заявки в друзья.
+        """
         url = reverse("jwt-create")
         user2_data = {
             "username": self.user2_info['username'],

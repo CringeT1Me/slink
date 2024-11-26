@@ -76,6 +76,28 @@ services:
         preserve_host: true
         strip_path: false
 
+      - name: admin
+        paths:
+          - /admin/
+          - /__dubug__/
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        preserve_host: true
+        strip_path: false
+
+      - name: static-files
+        paths:
+          - /static
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        strip_path: false
+
+      - name: openapi
+        paths:
+          - /swagger/
+          - /redoc/
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        preserve_host: true
+        strip_path: false
+
   - name: posts_service
     url: http://posts-service:8000
     routes:
@@ -122,5 +144,5 @@ consumers:
     custom_id: "user-service"
     jwt_secrets:
       - algorithm: HS256
-        key: "user_service"  # Это значение должно совпадать с "iss" в токене
+        key: "user_service"
         secret: ${JWT_SECRET}

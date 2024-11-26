@@ -3,14 +3,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from django.conf import settings
-from djoser.serializers import UidAndTokenSerializer, UserCreateSerializer, SendEmailResetSerializer, \
-    UserCreatePasswordRetypeSerializer
+from djoser.serializers import UidAndTokenSerializer, UserCreateSerializer
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from django.core import exceptions as django_exceptions
 from rest_framework.settings import api_settings
 import requests
@@ -34,7 +31,6 @@ class ProfileUserSerializer(serializers.ModelSerializer):
     def get_user(self, attrs):
         username = attrs.get("username")
         try:
-            # Ищем пользователя по username, email или phone
             user = User.objects.get(
                 Q(username__iexact=username) |
                 Q(email__iexact=username) |
@@ -43,7 +39,6 @@ class ProfileUserSerializer(serializers.ModelSerializer):
         except User.DoesNotExist:
             raise serializers.ValidationError({"username": "Пользователь с такими данными не найден."})
 
-        # Сохраняем найденного пользователя для дальнейшего использования
         self.user = user
         return user
 

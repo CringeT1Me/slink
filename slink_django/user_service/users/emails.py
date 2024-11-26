@@ -16,7 +16,6 @@ class EmailChange(BaseDjoserEmail):
         token = self.context.get('token')
         uid = utils.encode_uid(user.pk)
 
-        # Формируем ссылку
         context["url"] = settings.EMAIL.change_email_confirmation_url.format(uid=uid, token=token, new_email=new_email)
         return context
 

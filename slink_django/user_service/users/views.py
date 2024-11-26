@@ -1,4 +1,3 @@
-
 from cities_light.models import Country, City
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -8,7 +7,7 @@ from djoser.conf import settings
 from djoser.views import UserViewSet
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
@@ -16,7 +15,7 @@ from rest_framework import status, generics
 from friendship.models import Friendship, ACCEPTED
 from django.db.models import Q
 from users.models import User
-from users.serializers import CountrySerializer, CitySerializer, ProfileUserSerializer, FriendshipUserSerializer
+from users.serializers import CountrySerializer, CitySerializer, ProfileUserSerializer
 
 
 class CustomUserViewSet(UserViewSet):

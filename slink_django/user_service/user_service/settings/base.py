@@ -29,6 +29,9 @@ USE_TZ = True
 
 ALLOWED_HOSTS = ['*']
 FILES_SERVICE_URL = 'http://files-service:8000'
+SWAGGER_SETTINGS = {
+   'USE_SESSION_AUTH': False
+}
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -38,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'drf_yasg',
     'debug_toolbar',
     'cachalot',
     'djoser',
@@ -114,6 +118,9 @@ DATABASES = {
         'PASSWORD': os.environ.get('POSTGRES_USERS_PASSWORD'),
         'HOST': os.environ.get('POSTGRES_USERS_HOST'),
         'PORT': 5432,
+        'TEST': {
+            'NAME': 'test_dbtemp',
+        },
     }
 }
 
@@ -267,5 +274,6 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

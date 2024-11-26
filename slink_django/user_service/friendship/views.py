@@ -7,8 +7,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import GenericViewSet
 
-from .exceptions import FriendRequestAlreadyExists, FriendRequestDoesNotExist
-from .models import Friendship, ACCEPTED
+from .exceptions import FriendRequestAlreadyExists
+from .models import Friendship
 from .serializers import FriendshipSerializer
 
 logger = logging.getLogger(__name__)

@@ -1,12 +1,8 @@
-from django.conf import settings
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from django.conf import settings
 
 from user_service.celery import app
-from .models import User
-import requests
 
 
 

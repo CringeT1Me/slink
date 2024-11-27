@@ -7,18 +7,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build app
-      run: docker-compose build
+      run: docker compose build
   test:
     runs-on: ubuntu-latest
     needs: [build]
     steps:
       - uses: actions/checkout@v4
       - name: Test app
-        run: docker-compose up user_service_test
+        run: docker compose up user_service_test
   deploy:
     runs-on: ubuntu-latest
     needs: [test]
     steps:
       - uses: actions/checkout@v4
       - name: Deploy app
-        run: docker-compose up
+        run: docker compose up

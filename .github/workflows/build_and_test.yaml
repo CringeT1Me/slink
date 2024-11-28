@@ -35,11 +35,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.docker-cache
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Load Docker cache
+        run: |
+          if [ -f /tmp/.docker-cache ]; then
+            docker load -i /tmp/.docker-cache || true
+          fi
+
       - name: Create .env file from .env.example
         run: cp .env.example .env
 
       - name: Build app
-        run: docker compose build
+        run: |
+          docker compose build
+          docker save $(docker images -q) -o /tmp/.docker-cache
 
       - name: Test app
         run: docker compose up user_service_test

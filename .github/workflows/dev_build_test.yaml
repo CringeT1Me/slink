@@ -1,0 +1,43 @@
+name: Build and Test DEV
+on:
+  push:
+    branches: [dev]
+jobs:
+  build_and_test_frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ./slink_vue/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('./slink_vue/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        working-directory: ./slink_vue
+        run: npm ci
+
+      - name: Build app
+        working-directory: ./slink_vue
+        run: npm run build
+
+      - name: Lint app
+        working-directory: ./slink_vue
+        run: npm run lint
+
+  build_and_test_backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env file from .env.example
+        run: cp .env.example .env
+
+      - name: Build app
+        run: docker compose build
+
+      - name: Test app
+        run: docker compose up user_service_test

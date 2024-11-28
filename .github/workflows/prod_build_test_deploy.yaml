@@ -1,9 +1,10 @@
-name: Frontend Build and Test
+name: Build, Test and Deploy !PRODUCTION!
 on:
   push:
+    branches: [prod]
 jobs:
   build_and_test_frontend:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
@@ -27,28 +28,22 @@ jobs:
         working-directory: ./slink_vue
         run: npm run lint
 
-#      - name: Deploy app
-#        run: npm run serve
+      - name: Deploy app
+        run: npm run serve
 
   build_and_test_backend:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache Docker images.
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.yaml') }}
 
       - name: Create .env file from .env.example
         run: cp .env.example .env
 
       - name: Build app
-        run: |
-          docker compose build
+        run: docker compose build
 
       - name: Test app
         run: docker compose up user_service_test
 
-#      - name: deploy app
-#        run: docker compose up
+      - name: deploy app
+        run: docker compose up

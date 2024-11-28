@@ -1,4 +1,4 @@
-name: Build, Test, Deploy
+name: Backend Build and Test
 on:
   push:
 jobs:
@@ -24,9 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: List files in the workspace
-        run: ls -la
-
       - name: Download environment file
         uses: actions/download-artifact@v3
         with:
@@ -51,17 +48,17 @@ jobs:
       - name: Test app
         run: docker compose up user_service_test
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download environment file
-        uses: actions/download-artifact@v3
-        with:
-          name: env-file
-          path: .
-
-      - name: deploy app
-        run: docker compose up
+#  deploy:
+#    runs-on: ubuntu-latest
+#    needs: test
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Download environment file
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: env-file
+#          path: .
+#
+#      - name: deploy app
+#        run: docker compose up

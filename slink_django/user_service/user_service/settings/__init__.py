@@ -1,10 +1,10 @@
 import os
 
-from . import base
-
-DEBUG = os.environ.get('DEBUG', True)
-
-if DEBUG:
-    from .dev import *
-else:
+ENV = os.environ.get('ENV', 'test')
+print(f'Mode: {ENV.upper()}')
+if ENV == 'test':
+    from .test import *
+elif ENV == 'prod':
     from .prod import *
+else:
+    from .dev import *

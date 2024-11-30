@@ -121,7 +121,7 @@ plugins:
   - name: cors
     config:
       origins:
-        - 'https://localhost:8080'
+        - ${CORS}
       methods:
         - GET
         - POST

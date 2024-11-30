@@ -1,3 +1,4 @@
-.env
+configs/.env.prod
+configs/.env.dev
 **/.venv/
 **/__pycache__/

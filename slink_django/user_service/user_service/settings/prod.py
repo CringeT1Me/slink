@@ -1,3 +1,5 @@
+import os
+
 from .base import *
 
 DEBUG = False
@@ -13,3 +15,7 @@ DATABASES = {
         'PORT': 5432,
     }
 }
+
+DJOSER.update({
+    "EMAIL_FRONTEND_DOMAIN": os.environ.get('FRONTEND_DOMAIN'),
+})

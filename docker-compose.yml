@@ -46,7 +46,7 @@ services:
     networks:
       - app-network
     env_file:
-      - .env
+      - .env.${ENV}
     restart: on-failure:30
 
   celery_files:
@@ -72,7 +72,7 @@ services:
     networks:
       - app-network
     env_file:
-      - .env
+      - .env.${ENV}
     restart: on-failure:30
 
   celery_posts:
@@ -100,7 +100,7 @@ services:
     networks:
       - app-network
     env_file:
-      - .env
+      - .env.${ENV}
     restart: on-failure:30
 
   flower:
@@ -175,24 +175,6 @@ services:
       resources:
         limits:
           memory: "200m"
-
-  redis_test:
-    image: redis:alpine3.20
-    hostname: ${REDIS_TEST_HOST}
-    command: redis-server --requirepass ${REDIS_TEST_PASSWORD}
-    ports:
-      - "${REDIS_TEST_PORT}:6378"
-    environment:
-      TZ: ${TIME_ZONE}
-    volumes:
-      - redis_data_test:/data
-    networks:
-      - app-network
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   redis_result_backend:
     image: redis:alpine3.20
@@ -275,7 +257,7 @@ services:
       python manage.py migrate
       "
     env_file:
-      - .env
+      - .env.${ENV}
     volumes:
       - user_service_volume:/slink_django/user_service
     depends_on:
@@ -293,8 +275,11 @@ services:
       python manage.py collectstatic --noinput &
       gunicorn user_service.wsgi --bind 0.0.0.0:8000
       "
+    environment:
+      FRONTEND_DOMAIN: ${FRONTEND_DOMAIN}
+      FRONTEND_PORT: ${FRONTEND_PORT}
     env_file:
-      - .env
+      - .env.${ENV}
     volumes:
       - user_service_volume:/slink_django/user_service
     depends_on:
@@ -315,18 +300,16 @@ services:
       context: ./slink_django/user_service
       dockerfile: Dockerfile
     command: bash -c "
-      python manage.py test
+      python manage.py test --noinput
       "
     env_file:
-      - .env
+      - .env.${ENV}
     volumes:
       - user_service_volume:/slink_django/user_service
     depends_on:
       rabbitmq:
         condition: service_healthy
       postgres_users:
-        condition: service_healthy
-      redis_test:
         condition: service_healthy
       redis_result_backend:
         condition: service_healthy
@@ -344,7 +327,7 @@ services:
       python manage.py runserver 0.0.0.0:8000
       "
     env_file:
-      - .env
+      - .env.${ENV}
     volumes:
       - files_service_volume:/slink_django/files_service
     networks:
@@ -358,7 +341,7 @@ services:
       python manage.py migrate
       "
     env_file:
-      - .env
+      - .env.${ENV}
     volumes:
       - posts_service_volume:/slink_django/posts_service
     depends_on:
@@ -377,7 +360,7 @@ services:
       gunicorn posts_service.wsgi --bind 0.0.0.0:8000
       "
     env_file:
-      - .env
+      - .env.${ENV}
     volumes:
       - posts_service_volume:/slink_django/posts_service
     depends_on:
@@ -405,6 +388,7 @@ services:
       KONG_ADMIN_LISTEN: "0.0.0.0:8001, 0.0.0.0:8444 ssl"
       KONG_ADMIN_GUI_URL: http://localhost:8002
       JWT_SECRET: ${JWT_SECRET}
+      CORS: ${CORS}
       KONG_LOG_LEVEL: debug
     ports:
       - "8000:8000"
@@ -415,12 +399,26 @@ services:
     networks:
       - app-network
 
+  vue:
+    build:
+      context: ./slink_vue
+      dockerfile: Dockerfile
+    environment:
+      FRONTEND_DOMAIN: ${FRONTEND_DOMAIN}
+      FRONTEND_PORT: ${FRONTEND_PORT}
+    env_file:
+      - .env.${ENV}
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT}
+    networks:
+      - app-network
+    volumes:
+      - posts_service_volume:/slink_django/posts_service
 
 volumes:
   rabbitmq_data:
   postgres_data_users:
   postgres_data_posts:
-  postgres_data_test:
   redis_data_result_backend:
     driver: local
   redis_data_users:
@@ -429,13 +427,13 @@ volumes:
     driver: local
   redis_data_posts:
     driver: local
-  redis_data_test:
-    driver: local
   user_service_volume:
     driver: local
   files_service_volume:
     driver: local
   posts_service_volume:
+    driver: local
+  vue_volume:
     driver: local
 
 networks:

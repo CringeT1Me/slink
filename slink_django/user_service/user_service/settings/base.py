@@ -13,8 +13,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('USERS_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG')
-
 HOST = 'user_service'
 
 INTERNAL_IPS = ['127.0.0.1',"0.0.0.0:8000"]
@@ -157,7 +155,7 @@ CELERY_IGNORE_RESULT = False
 REDIS_USERS_PASSWORD= os.environ.get('REDIS_USERS_PASSWORD')
 REDIS_USERS_HOST = os.environ.get('REDIS_USERS_HOST')
 REDIS_USERS_PORT = '6379'
-REDIS_USERS = f'redis://{REDIS_USERS_PASSWORD}@{REDIS_USERS_HOST}:{REDIS_USERS_PORT}'
+REDIS_USERS = f'redis://:{REDIS_USERS_PASSWORD}@{REDIS_USERS_HOST}:{REDIS_USERS_PORT}'
 
 CACHES = {
     'default': {
@@ -193,8 +191,8 @@ REST_FRAMEWORK = {
 AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = ('users.backends.AuthBackend',)
 DJOSER = {
-    "EMAIL_FRONTEND_DOMAIN": "localhost:8080",
-    "EMAIL_FRONTEND_PROTOCOL": "https",
+    "EMAIL_FRONTEND_DOMAIN": 'localhost:8080',
+    "EMAIL_FRONTEND_PROTOCOL": "http",
     "EMAIL_FRONTEND_SITE_NAME": "Slink",
     'ACTIVATION_URL': 'registration/activation/{uid}/{token}',
     'PASSWORD_RESET_CONFIRM_URL': '/password_reset_confirm/{uid}/{token}',

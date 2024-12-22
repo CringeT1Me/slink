@@ -1,0 +1,14 @@
+fastapi[all]
+alembic
+sqlalchemy
+pydantic
+pydantic-settings
+psycopg2-binary
+asyncpg
+aiosqlite
+celery
+redis
+pyjwt
+pytest-asyncio
+uvicorn
+gunicorn

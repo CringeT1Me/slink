@@ -1,4 +1,6 @@
 configs/.env.prod
-configs/.env.dev
-**/.venv/
-**/__pycache__/
+configs/.env
+.venv/
+__pycache__/
+.idea/
+

@@ -1,6 +1,6 @@
 # Проектная структура микросервисов
 
-Этот проект представляет собой микросервисное приложение с использованием современных инструментов для управления пользователями, постами и файлами. Реализован бекенд на основе Django и Django REST Framework, а фронтенд — на Vue.js.
+Этот проект представляет собой микросервисное приложение с использованием современных инструментов для управления пользователями, постами и файлами. Реализован бекенд на основе Django REST Framework и FastAPI, а фронтенд — на Vue.js.
 
 ## 📚 **Структура сервисов:**
 
@@ -12,12 +12,12 @@
      - Управление дружбой между пользователями.
    - **Технологии:** Django REST Framework, Djoser, Simple-JWT, Django-Cities_Light (выбора страны и города), Django-Cachalot, Django-Redis, Celery.
 
-### 2. **Post Service** (Сервис постов)
+### 2. **Posts Service** (Сервис постов)
    - **Функции:**
-     - Создание альбомов "Аватарки" и "Посты" при создании нового пользователя.
+     - Создание альбомов "Аватарки" и "Посты" при создании нового пользователя в Users Service.
      - Публикация новых постов с добавлением изображений в альбом "Посты".
-     - Архивация и разархивация постов.
-   - **Технологии:** Django REST Framework, Simple-JWT, Django-Redis, Celery.
+     - Архивация и разархивация постов, а также другие CRUD эндпоинты.
+   - **Технологии:** FastAPI, SQLAlchemy, Alembic, Pydantic, Celery, Pytest-AsyncIO, Uvicorn+Gunicorn
 
 ### 3. **Files Service** (Сервис файлов)
    - **Функции:**
@@ -32,7 +32,7 @@
 - **Redis** — хранение результатов для Celery.
 - **RabbitMQ** — обмен сообщениями между микросервисами, брокер сообщений для Celery.
 - **Kong API Gateway** — маршрутизация API-запросов и управление трафиком, валидация JWT и CORS.
-
+- **Nginx** — маршрутизация в Kong (в будущем на фронтенд).
 ---
 
 ## 🌐 **Фронтенд (Vue.js):**
@@ -48,20 +48,39 @@
 ---
 ## 📝 **Документация API:**
 - Документация API доступна по ссылкам:
-  - Swagger UI: http://localhost:8000/swagger/
-  - ReDoc: http://localhost:8000/redoc/
+  - User Service Swagger UI: http://localhost:8000/swagger/
+  - User Service ReDoc: http://localhost:8000/redoc/
+  - Posts Service Swagger UI: http://localhost:8000/posts-service/swagger/
+  - Posts Service Redoc: http://localhost:8000/posts-service/redoc/
 ---
 ## 🛠️ **Установка и запуск:**
-### **1. Запуск тестов:**
-  ```bash
-   docker-compose up --build user_service_test
+
+### **1. Конфигурация:**
+Конфигурацию можно изменить, отредактировав .env файлы в configs. Для запуска docker можно использовать флаг --env-file как указано ниже.
+
+   ```bash
+   docker-compose --env-file .env.prod up --build
    ```
+   
 ---
-### **2. Запуск микросервисов:**
+
+### **2. Запуск тестов:**
+
+Тесты автоматически запускаются при запуске сервисов. Однако можно использовать следующую команду.
+
+  ```bash
+   docker-compose up --build user_service_test posts_service_test
+  ```
+  
+---
+
+### **3. Запуск микросервисов:**
    ```bash
    docker-compose up --build
    ```
+   
 ---
-### **3. Обращение к API:**
+
+### **4. Обращение к API:**
   - http://localhost:8000/
 

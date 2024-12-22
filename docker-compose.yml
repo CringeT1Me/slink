@@ -27,7 +27,7 @@ services:
       dockerfile: Dockerfile
     command: ["celery", "-A", "user_service", "worker", "--loglevel=info", "--hostname=celery_users@%h"]
     volumes:
-      - user_service_volume:/slink_django/user_service/
+      - ./slink_django/user_service:/slink_django/user_service
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -45,8 +45,6 @@ services:
       start_period: 10s
     networks:
       - app-network
-    env_file:
-      - .env.${ENV}
     restart: on-failure:30
 
   celery_files:
@@ -55,7 +53,7 @@ services:
       dockerfile: Dockerfile
     command: [ "celery", "-A", "files_service", "worker", "--loglevel=info", "--hostname=celery_files@%h" ]
     volumes:
-      - files_service_volume:/slink_django/files_service/
+      - ./slink_django/files_service:/slink_django/files_service
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -71,17 +69,15 @@ services:
       start_period: 10s
     networks:
       - app-network
-    env_file:
-      - .env.${ENV}
     restart: on-failure:30
 
   celery_posts:
     build:
-      context: ./slink_django/posts_service
+      context: ./slink_fastapi/posts_service
       dockerfile: Dockerfile
-    command: [ "celery", "-A", "posts_service", "worker", "--loglevel=info", "--hostname=celery_posts@%h" ]
+    command: [ "celery", "-A", "core", "worker", "--loglevel=info", "--hostname=celery_posts@%h" ]
     volumes:
-      - posts_service_volume:/slink_django/posts_service/
+      - ./slink_fastapi/posts_service:/slink_fastapi/posts_service
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -92,15 +88,13 @@ services:
       redis_posts:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "celery", "-A", "posts_service", "status" ]
+      test: [ "CMD", "celery", "-A", "core", "status" ]
       interval: 30s
       timeout: 10s
       retries: 10
       start_period: 10s
     networks:
       - app-network
-    env_file:
-      - .env.${ENV}
     restart: on-failure:30
 
   flower:
@@ -257,9 +251,10 @@ services:
       python manage.py migrate
       "
     env_file:
-      - .env.${ENV}
+      - .env${ENV}
     volumes:
-      - user_service_volume:/slink_django/user_service
+      - ./slink_django/user_service:/slink_django/user_service
+      - .env:/slink_django/user_service/user_service/settings/.env
     depends_on:
       postgres_users:
         condition: service_healthy
@@ -281,9 +276,10 @@ services:
       FRONTEND_DOMAIN: ${FRONTEND_DOMAIN}
       FRONTEND_PORT: ${FRONTEND_PORT}
     env_file:
-      - .env.${ENV}
+      - .env${ENV}
     volumes:
-      - user_service_volume:/slink_django/user_service
+      - ./slink_django/user_service:/slink_django/user_service
+      - .env:/slink_django/user_service/user_service/settings/.env
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -305,9 +301,9 @@ services:
       python manage.py test --noinput
       "
     env_file:
-      - .env.${ENV}
+      - .env${ENV}
     volumes:
-      - user_service_volume:/slink_django/user_service
+      - .env:/slink_django/user_service/user_service/settings/.env
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -329,54 +325,71 @@ services:
       python manage.py runserver 0.0.0.0:8000
       "
     env_file:
-      - .env.${ENV}
+      - .env${ENV}
     volumes:
-      - files_service_volume:/slink_django/files_service
+      - ./slink_django/files_service:/slink_django/files_service
+      - .env:/slink_django/files_service/files_service/.env
     networks:
       - app-network
 
   posts_service_migrate:
     build:
-      context: ./slink_django/posts_service
+      context: ./slink_fastapi/posts_service
       dockerfile: Dockerfile
     command: bash -c "
-      python manage.py migrate
+      alembic upgrade head
       "
-    env_file:
-      - .env.${ENV}
     volumes:
-      - posts_service_volume:/slink_django/posts_service
+      - ./slink_fastapi/posts_service:/slink_fastapi/posts_service
+      - .env:/slink_fastapi/posts_service/core/.env
     depends_on:
       postgres_posts:
         condition: service_healthy
     networks:
       - app-network
-    restart: on-failure:30
+
+  posts_service_test:
+    hostname: posts-service
+    build:
+      context: ./slink_fastapi/posts_service
+      dockerfile: Dockerfile
+    command: bash -c "
+      pytest
+      "
+    volumes:
+      - ./slink_fastapi/posts_service:/slink_fastapi/posts_service
+      - .env:/slink_fastapi/posts_service/core/.env
+    depends_on:
+      postgres_posts:
+        condition: service_healthy
+      posts_service_migrate:
+        condition: service_completed_successfully
+    networks:
+      - app-network
 
   posts_service:
     hostname: posts-service
     build:
-      context: ./slink_django/posts_service
+      context: ./slink_fastapi/posts_service
       dockerfile: Dockerfile
     command: bash -c "
-      gunicorn posts_service.wsgi --bind 0.0.0.0:8000
+      python asgi.py
       "
-    env_file:
-      - .env.${ENV}
     volumes:
-      - posts_service_volume:/slink_django/posts_service
+      - ./slink_fastapi/posts_service:/slink_fastapi/posts_service
+      - .env:/slink_fastapi/posts_service/core/.env
     depends_on:
       postgres_posts:
         condition: service_healthy
-      redis_posts:
-        condition: service_healthy
-      posts_service_migrate:
+      posts_service_test:
         condition: service_completed_successfully
     networks:
       - app-network
     restart: on-failure:30
 
   kong:
+    container_name: kong
+    hostname: kong
     build:
       context: ./slink_kong
       dockerfile: Dockerfile
@@ -393,11 +406,22 @@ services:
       CORS: ${CORS}
       KONG_LOG_LEVEL: debug
     ports:
-      - "8000:8000"
+      - "8002:8000"
       - "8433:8433"
       - "8001:8001"
-      - "8002:8002"
       - "8444:8444"
+    networks:
+      - app-network
+
+  nginx:
+    container_name: nginx
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "8000:8000"
     networks:
       - app-network
 
@@ -409,13 +433,13 @@ services:
       FRONTEND_DOMAIN: ${FRONTEND_DOMAIN}
       FRONTEND_PORT: ${FRONTEND_PORT}
     env_file:
-      - .env.${ENV}
+      - .env${ENV}
     ports:
       - ${FRONTEND_PORT}:${FRONTEND_PORT}
     networks:
       - app-network
     volumes:
-      - posts_service_volume:/slink_django/posts_service
+      - ./slink_vue:/slink_vue
 
 volumes:
   rabbitmq_data:
@@ -428,14 +452,6 @@ volumes:
   redis_data_files:
     driver: local
   redis_data_posts:
-    driver: local
-  user_service_volume:
-    driver: local
-  files_service_volume:
-    driver: local
-  posts_service_volume:
-    driver: local
-  vue_volume:
     driver: local
 
 networks:

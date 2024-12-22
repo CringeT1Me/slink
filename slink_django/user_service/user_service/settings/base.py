@@ -1,10 +1,11 @@
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(f'{BASE_DIR}/settings/.env')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -27,6 +28,7 @@ USE_TZ = True
 
 ALLOWED_HOSTS = ['*']
 FILES_SERVICE_URL = 'http://files-service:8000'
+
 SWAGGER_SETTINGS = {
    'USE_SESSION_AUTH': False
 }
@@ -79,7 +81,7 @@ LOGGING = {
         },
     },
     'root': {
-        'level': 'DEBUG',  # Ставим DEBUG для отладки
+        'level': 'DEBUG',
         'handlers': ['console'],
     },
 }
@@ -102,9 +104,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'user_service.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 CITIES_LIGHT_TRANSLATION_LANGUAGES = ['ru', 'en']
 

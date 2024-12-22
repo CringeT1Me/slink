@@ -7,13 +7,13 @@ env:
   FRONTEND_DOMAIN: ${{ secrets.FRONTEND_DOMAIN }}
   FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 jobs:
-  build_and_test_backend:
+  build_test_deploy:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
       - name: Create .env file
-        run: cp configs/.env.prod.example configs/.prod.dev
+        run: cp configs/.env.prod.example configs/.env.prod
 
       - name: Build app
         run: > 

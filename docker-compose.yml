@@ -341,7 +341,7 @@ services:
       "
     volumes:
       - ./slink_fastapi/posts_service:/slink_fastapi/posts_service
-      - .env:/slink_fastapi/posts_service/core/.env
+      - ./.env:/slink_fastapi/posts_service/core/.env
     depends_on:
       postgres_posts:
         condition: service_healthy

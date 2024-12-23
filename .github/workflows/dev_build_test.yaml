@@ -8,11 +8,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create .env file
-        run: cp configs/.env.dev.example configs/.env.dev
-
       - name: Build app
-        run: docker compose --env-file .env.dev build
+        run: docker compose build
 
       - name: Test app
-        run: docker compose --env-file .env.dev up user_service_test
+        run: docker compose up user_service_test posts_service_test

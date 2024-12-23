@@ -1,5 +1,4 @@
 configs/.env.prod
-configs/.env
 .venv/
 __pycache__/
 .idea/
